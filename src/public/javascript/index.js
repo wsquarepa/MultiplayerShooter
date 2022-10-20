@@ -93,6 +93,7 @@
                         })
                     
                         newButton.addEventListener("click", () => {
+                            newButton.disabled = true;
 
                             const loadHolder = document.createElement("div")
     
@@ -133,9 +134,28 @@
                             setTimeout(() => {
                                 fetch("/api/lobby", {
                                     method: "POST"
-                                }).then(res => res.text())
-                                .then(res => {
-                                    location = "/game?id=" + res
+                                }).then(res => {
+                                    if (res.status == 200) {
+                                        res.text()
+                                        .then(res => {
+                                            location = "/game?id=" + res
+                                        })
+                                    } else {
+                                        loadLabel.innerHTML = "429 | Too many requests"
+                                        loadLabel.style.color = "lightcoral"
+                                    }
+                                })
+                                .catch(() => {
+                                    loadLabel.innerHTML = "Failed to create lobby"
+                                    loadLabel.style.color = "lightcoral"
+                                })
+                                .finally(() => {
+                                    setTimeout(() => {
+                                        loadHolder.remove()
+                                    }, 3000)
+                                    
+                                    loadProgress.remove()
+                                    newButton.disabled = false
                                 })
                             }, timeToWait)
                         })

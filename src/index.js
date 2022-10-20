@@ -37,6 +37,12 @@ const signupLimiter = new RateLimiterMemory({
     blockDuration: 60 * 60
 })
 
+const lobbyLimiter = new RateLimiterMemory({
+    points: 5,
+    duration: 30,
+    blockDuration: 60 * 5 //300 seconds | 5 minutes
+})
+
 // ===== Console Log Inject =====
 
 function getLogPrefix() {
@@ -326,18 +332,24 @@ app.route("/api/lobby")
             return;
         }
 
-        const gameid = makeid(8)
+        lobbyLimiter.consume(req.ip)
+        .then(() => {
+            const gameid = makeid(8)
 
-        games[gameid] = {
-            connections: [],
-            game: {
-                players: [],
-                bullets: [],
-                structures: []
+            games[gameid] = {
+                connections: [],
+                game: {
+                    players: [],
+                    bullets: [],
+                    structures: []
+                }
             }
-        }
-
-        res.send(gameid)
+    
+            res.send(gameid)
+        })
+        .catch((e) => {
+            res.status(429).send('Too Many Requests | Try again in ' + e.msBeforeNext + "ms");
+        });
     })
 
 app.use((req, res, next) => {
