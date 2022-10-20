@@ -170,7 +170,7 @@ app.get("/", (req, res) => {
 })
 
 app.get("/game", (req, res) => {
-    if (!req.cookies.token) {
+    if (!req.cookies.token || checkAuth(req.cookies.token) == null) {
         res.redirect("/")
         return;
     }
@@ -187,7 +187,7 @@ app.get("/index.js", (req, res) => {
 })
 
 app.get("/game.js", (req, res) => {
-    if (!req.cookies.token) {
+    if (!req.cookies.token || checkAuth(req.cookies.token) == null) {
         res.status(403).send("Unauthorized | No Authentication")
         return;
     }
@@ -288,7 +288,7 @@ app.post("/register", (req, res) => {
         const hashedPassword = bcrypt.hashSync(password, SALT_ROUNDS);
         userData[username] = {
             password: hashedPassword,
-            pastGames: []
+            stats: {}
         }
 
         res.cookie("token", createAuthToken(username, req.ip), { maxAge: 1000 * 60 * 60 * 24 })
@@ -299,6 +299,49 @@ app.post("/register", (req, res) => {
     .catch((e) => {
         res.status(429).send('Too Many Requests | Try again in ' + e.msBeforeNext + "ms");
     });
+})
+
+app.route("/api/lobby")
+    .get((req, res) => {
+        if (!req.cookies.token || checkAuth(req.cookies.token) == null) {
+            res.status(403).send("Unauthorized | No Authentication")
+            return;
+        }
+
+        if (req.query.id == null) {
+            res.status(400).send("Invalid Request | Missing query ID")
+            return;
+        }
+
+        if (games[req.query.id] == null) {
+            res.status(404).send("Game not found | " + req.query.id)
+            return;
+        }
+
+        res.send("OK")
+    })
+    .post((req, res) => {
+        if (!req.cookies.token || checkAuth(req.cookies.token) == null) {
+            res.status(403).send("Unauthorized | No Authentication")
+            return;
+        }
+
+        const gameid = makeid(8)
+
+        games[gameid] = {
+            connections: [],
+            game: {
+                players: [],
+                bullets: [],
+                structures: []
+            }
+        }
+
+        res.send(gameid)
+    })
+
+app.use((req, res, next) => {
+    res.status(404).send("404 | Resource Not Found")
 })
 
 app.listen(PORT, () => {

@@ -93,7 +93,51 @@
                         })
                     
                         newButton.addEventListener("click", () => {
-                            location = "/game"
+
+                            const loadHolder = document.createElement("div")
+    
+                            const loadLabel = document.createElement("div")
+                            const loadProgress = document.createElement("progress")
+    
+                            const timeToWait = Math.random() * 5000;
+                            var previousRandomAddition = -1;
+    
+                            loadHolder.classList.add("center")
+    
+                            loadLabel.classList.add("center")
+                            loadProgress.style.display = "block"
+                            loadProgress.style.marginLeft = "auto"
+                            loadProgress.style.marginRight = "auto"
+    
+                            loadLabel.innerHTML = "Creating Lobby..."
+                            loadProgress.max = 100
+                            loadProgress.value = 0
+    
+                            loadHolder.appendChild(loadLabel)
+                            loadHolder.appendChild(loadProgress)
+    
+                            joinGameModal.appendChild(loadHolder)
+    
+                            setInterval(() => {
+                                const randomAddition = (previousRandomAddition < 0? 1 - previousRandomAddition:Math.random())
+    
+                                loadProgress.value += randomAddition
+    
+                                if (previousRandomAddition < 0) {
+                                    previousRandomAddition = randomAddition
+                                } else {
+                                    previousRandomAddition = -1
+                                }
+                            }, timeToWait / 100)
+
+                            setTimeout(() => {
+                                fetch("/api/lobby", {
+                                    method: "POST"
+                                }).then(res => res.text())
+                                .then(res => {
+                                    location = "/game?id=" + res
+                                })
+                            }, timeToWait)
                         })
                     
                         joinGameModal.appendChild(input)
