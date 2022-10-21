@@ -33,7 +33,8 @@ const GAME_ARGS = {
     },
     BUFF_TIMEOUT: 10 * 10,
     PLAYER_HITBOX: 12,
-    BULLET_SPEED: 30,
+    PLAYER_FIRECD: 1,
+    BULLET_SPEED: 50,
     BULLET_DAMAGE: () => { return rand(3, 9) },
     BULLET_RANGE: 500,
     BULLET_LIFETIME: 100
@@ -650,7 +651,7 @@ function gameTick() {
                     lifetime: 0
                 })
 
-                player.firecd = 2
+                player.firecd = GAME_ARGS.PLAYER_FIRECD
             } else if (player.firecd > 0) {
                 player.firecd--
             }
