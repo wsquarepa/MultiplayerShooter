@@ -100,7 +100,7 @@
                             const loadLabel = document.createElement("div")
                             const loadProgress = document.createElement("progress")
     
-                            const timeToWait = Math.random() * 5000;
+                            const timeToWait = Math.random() * 1000;
                             var previousRandomAddition = -1;
     
                             loadHolder.classList.add("center")

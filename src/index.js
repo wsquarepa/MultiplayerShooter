@@ -1,6 +1,5 @@
 const express = require('express')
 const dotenv = require('dotenv')
-const { WebSocketServer } = require('ws')
 const fs = require('fs')
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
@@ -9,19 +8,26 @@ const obfuscator = require('javascript-obfuscator');
 const clc = require('cli-color')
 const readline = require("readline");
 const { RateLimiterMemory } = require('rate-limiter-flexible')
+const { createServer } = require("http");
+const { Server } = require("socket.io");
 
 dotenv.config()
 
 const PORT = parseInt(process.env.PORT) || 8080
 const WSPORT = parseInt(process.env.WS_PORT) || 8081
 
-const app = express()
-const wss = new WebSocketServer({port: WSPORT}, () => {
-    console.log("Websocket listening on port " + WSPORT)
-})
-
 const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS) || 8
 const JWT_KEY = process.env.JWT_KEY || "secret"
+
+const GAME_ARGS = {
+    MOVEMENT_SPEED: 20,
+    TICKS_BEFORE_GAME_TIMEOUT: 10 * 60, //1 Minute
+    PLAYER_HITBOX: 12,
+    BULLET_SPEED: 30,
+    BULLET_DAMAGE: () => { return rand(3, 9) },
+    BULLET_RANGE: 500,
+    BULLET_LIFETIME: 100
+}
 
 const DEBUG = process.env.DEBUG || true
 
@@ -42,6 +48,10 @@ const lobbyLimiter = new RateLimiterMemory({
     duration: 30,
     blockDuration: 60 * 5 //300 seconds | 5 minutes
 })
+
+const app = express()
+const httpServer = createServer(app);
+const io = new Server(httpServer);
 
 // ===== Console Log Inject =====
 
@@ -101,7 +111,7 @@ function rand(min, max) {
 /**
  * Checks authentication token.
  * @param {String} token 
- * @returns null if invalid token, token otherwise
+ * @returns null if invalid token, username otherwise
  */
 function checkAuth(token, ip = null) {
     var decodedtoken = null;
@@ -145,6 +155,27 @@ function createAuthToken(username, ip, expiresIn = "1d") {
 
     return jwt.sign({session: randomID}, JWT_KEY, {expiresIn: expiresIn})
 }
+
+function calculateDelta(x1, y1, x2, y2, speed) {
+    if ((x2 - x1) == 0) {
+        return {
+            dx: 0,
+            dy: 0
+        }
+    }
+
+    const angle = Math.atan((y2 - y1) / (x2 - x1));
+
+    const deltaX = speed * Math.cos(angle);
+    const deltaY = speed * Math.sin(angle);
+
+    return {
+        dx: ((x2 - x1) < 0? -1:1) * deltaX,
+        dy: ((x2 - x1) < 0? -1:1) * deltaY
+    }
+}
+
+// ==============================
 
 var userData = {}
 
@@ -337,14 +368,14 @@ app.route("/api/lobby")
             const gameid = makeid(8)
 
             games[gameid] = {
-                connections: [],
-                game: {
-                    players: [],
-                    bullets: [],
-                    structures: []
-                }
+                players: {},
+                bullets: [],
+                powerups: [],
+                timeout: 0
             }
     
+            console.log("Created game " + gameid)
+            
             res.send(gameid)
         })
         .catch((e) => {
@@ -352,13 +383,304 @@ app.route("/api/lobby")
         });
     })
 
+app.get("/api/wsport", (req, res) => {
+    if (!req.cookies.token || checkAuth(req.cookies.token) == null) {
+        res.status(403).send("Unauthorized | No Authentication")
+        return;
+    }
+
+    res.send(WSPORT)
+})
+
 app.use((req, res, next) => {
     res.status(404).send("404 | Resource Not Found")
 })
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log("WebServer listening on port " + PORT)
 })
+
+io.on("connection", (socket) => {
+    console.log("User Connection | ID: " + socket.id)
+
+    socket.on("authentication", (msg) => {
+        if (checkAuth(msg) != null) {
+            socket.data.auth = checkAuth(msg);
+            console.log("User Authentication | Username: " + socket.data.auth + " | ID: " + socket.id)
+        } else {
+            socket.disconnect(true)
+        }
+    })
+
+    socket.on("game", (msg) => {
+        if (socket.data.auth == null) {
+            socket.emit("error", "No Authentication")
+            socket.disconnect(true);
+            return;
+        }
+
+        if (games[msg] == null) {
+            socket.emit("error", "Game not found")
+            socket.disconnect(true);
+            return;
+        }
+
+        socket.join(msg)
+        socket.data.game = msg
+
+        games[msg].players[socket.id] = {
+            health: 100,
+            buffs: [],
+            position: {
+                x: 0,
+                y: 0
+            },
+            movement: {
+                up: false,
+                right: false,
+                down: false,
+                left: false
+            },
+            mousePosition: {
+                x: 0,
+                y: 0
+            },
+            firing: false,
+            firecd: 0,
+            disconnected: false
+        }
+
+        console.log("User Game Join | Game: " + socket.data.game + " | ID: " + socket.id)
+
+        socket.emit("ack", "0")
+    })
+
+    socket.on("ping", (callback) => {
+        callback();
+    })
+
+    socket.on("move", (msg) => {
+        if (socket.data.game == null) {
+            socket.emit("error", "No Game")
+            socket.disconnect(true);
+            return;
+        }
+
+        if (games[socket.data.game].players[socket.id] == null) {
+            socket.emit("error", "No Game")
+            return;
+        }
+
+        try {
+            JSON.parse(JSON.stringify(msg))
+        } catch {
+            socket.emit("error", "Invalid Movement Packet")
+            return;
+        }
+
+        const packet = JSON.parse(JSON.stringify(msg))
+
+        if (packet.direction == null || packet.enable == null) {
+            socket.emit("error", "Invalid Movement Packet")
+            return;
+        }
+
+        if (packet.enable != "0" && packet.enable != "1") {
+            socket.emit("error", "Invalid Movement Packet")
+            return;
+        }
+
+        const enable = packet.enable == 1
+
+        switch (packet.direction) {
+            case "up":
+                games[socket.data.game].players[socket.id].movement.up = enable
+                break;
+            case "right":
+                games[socket.data.game].players[socket.id].movement.right = enable
+                break;
+            case "down":
+                games[socket.data.game].players[socket.id].movement.down = enable
+                break;
+            case "left":
+                games[socket.data.game].players[socket.id].movement.left = enable
+                break;
+            default:
+                socket.emit("error", "Invalid Movement Packet")
+        }
+    })
+
+    socket.on("mousepos", (msg) => {
+        if (socket.data.game == null) {
+            socket.emit("error", "No Game")
+            socket.disconnect(true);
+            return;
+        }
+
+        if (games[socket.data.game].players[socket.id] == null) {
+            socket.emit("error", "No Game")
+            return;
+        }
+
+        try {
+            JSON.parse(JSON.stringify(msg))
+        } catch {
+            socket.emit("error", "Invalid Movement Packet")
+            return;
+        }
+
+        const packet = JSON.parse(JSON.stringify(msg))
+
+        if (packet.x == null || packet.y == null) {
+            socket.emit("error", "Invalid Movement Packet")
+            return;
+        }
+
+        games[socket.data.game].players[socket.id].mousePosition = {
+            x: packet.x,
+            y: packet.y
+        }
+    })
+
+    socket.on("fire", (msg) => {
+        if (socket.data.game == null) {
+            socket.emit("error", "No Game")
+            socket.disconnect(true);
+            return;
+        }
+
+        if (games[socket.data.game].players[socket.id] == null) {
+            socket.emit("error", "No Game")
+            return;
+        }
+
+        if (msg != "0" && msg != "1") {
+            socket.emit("error", "Invalid Firing Packet")
+            return;
+        }
+
+        games[socket.data.game].players[socket.id].firing = msg == 1
+    })
+
+    socket.on("chatmessage", (msg) => {
+        if (socket.data.game == null) {
+            socket.emit("error", "No Game")
+            socket.disconnect(true);
+            return;
+        }
+
+        socket.to(socket.data.game).emit("chatmessage", msg)
+    })
+    
+    socket.on("disconnect", (reason) => {
+        if (socket.data.game != null && games[socket.data.game] != null && games[socket.data.game].players[socket.id] != null) {
+            games[socket.data.game].players[socket.id].disconnected = true;
+        }
+
+        console.log("User Disconnect | Reason: " + reason + " | ID: " + socket.id)
+    })
+})
+
+function gameTick() {
+    const keys = Object.keys(games)
+    for (var i = 0; i < keys.length; i++) {
+        const game = games[keys[i]]
+
+        const players = Object.keys(game.players)
+        for (var p = 0; p < players.length; p++) {
+            const player = game.players[players[p]];
+
+            if (player == null) continue;
+
+            if (player.disconnected || player.health < 1) {
+                delete games[keys[i]].players[players[p]]
+                players.splice(p, 1)
+                p--;
+                continue;
+            }
+
+            if (player.movement.up) {
+                player.position.y -= GAME_ARGS.MOVEMENT_SPEED
+            }
+
+            if (player.movement.right) {
+                player.position.x += GAME_ARGS.MOVEMENT_SPEED
+            }
+
+            if (player.movement.down) {
+                player.position.y += GAME_ARGS.MOVEMENT_SPEED
+            }
+
+            if (player.movement.left) {
+                player.position.x -= GAME_ARGS.MOVEMENT_SPEED
+            }
+
+            if (player.firing && player.firecd < 1) {
+                const deltas = calculateDelta(player.position.x, player.position.y, 
+                    player.position.x + player.mousePosition.x, player.position.y + player.mousePosition.y, GAME_ARGS.BULLET_SPEED)
+
+                games[keys[i]].bullets.push({
+                    x: player.position.x,
+                    y: player.position.y,
+                    sx: player.position.x,
+                    sy: player.position.y,
+                    dx: deltas.dx,
+                    dy: deltas.dy,
+                    owner: players[p],
+                    lifetime: 0
+                })
+
+                player.firecd = 2
+            } else if (player.firecd > 0) {
+                player.firecd--
+            }
+        }
+
+        for (var b = 0; b < game.bullets.length; b++) {
+            const bullet = game.bullets[b]
+
+            if (Math.sqrt(Math.abs(bullet.sx - bullet.x) + Math.abs(bullet.sy - bullet.y)) > GAME_ARGS.BULLET_RANGE || bullet.lifetime > GAME_ARGS.BULLET_LIFETIME) {
+                games[keys[i]].bullets.splice(b, 1)
+                b--;
+                continue;
+            }
+
+            bullet.x += bullet.dx
+            bullet.y += bullet.dy
+
+            bullet.lifetime++
+
+            for (p = 0; p < players.length; p++) {
+                const player = game.players[players[p]];
+
+                if (Math.abs(player.position.x - bullet.x) < GAME_ARGS.PLAYER_HITBOX && Math.abs(player.position.y - bullet.y) < GAME_ARGS.PLAYER_HITBOX) {
+                    player.health -= GAME_ARGS.BULLET_DAMAGE()
+
+                    games[keys[i]].bullets.splice(b, 1)
+                    b--;
+
+                    break;
+                }
+            }
+        }
+
+        if (players.length < 1) {
+            game.timeout++
+
+            if (game.timeout > GAME_ARGS.TICKS_BEFORE_GAME_TIMEOUT) {
+                console.log("Game " + keys[i] + " timed out, deleting...")
+                delete games[keys[i]]
+                keys.splice(i, 1)
+                i--;
+                continue;
+            }
+        }
+
+        io.to(keys[i]).emit("game", game)
+    }
+}
+
+setInterval(gameTick, 100)
 
 if (DEBUG) {
     const rl = readline.createInterface({
