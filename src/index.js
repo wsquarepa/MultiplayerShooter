@@ -438,7 +438,8 @@ io.on("connection", (socket) => {
             },
             firing: false,
             firecd: 0,
-            disconnected: false
+            disconnected: false,
+            username: socket.data.auth
         }
 
         console.log("User Game Join | Game: " + socket.data.game + " | ID: " + socket.id)

@@ -89,6 +89,8 @@
 
         ctx.strokeStyle = "#FFFFFF"
         ctx.fillStyle = "#FFFFFF"
+        ctx.textAlign = "center"
+        ctx.font = "20px Comfortaa";
 
         ctx.clearRect(0, 0, c.width, c.height)
 
@@ -124,6 +126,8 @@
 
             ctx.strokeRect(player.position.x - 50, player.position.y + 15, 100, 3.5)
             ctx.fillRect(player.position.x - 50, player.position.y + 15, player.health, 3.5)
+
+            ctx.fillText(player.username, player.position.x, player.position.y - 25)
         }
 
         for (var b = 0; b < game.bullets.length; b++) {
