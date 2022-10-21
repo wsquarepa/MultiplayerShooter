@@ -22,6 +22,16 @@ const GAME_ARGS = {
     MOVEMENT_SPEED: 20,
     TICKS_BEFORE_GAME_TIMEOUT: 10 * 60, //1 Minute
     WORLDBORDER: 2000,
+    TICKS_BEFORE_POWERUP: 10 * 10, // 10 seconds,
+    MAX_POWERUPS: 10,
+    POWERUP_HTIBOX: 20,
+    POWERUP_POSSIBILITY: ["attack", "health", "speed"],
+    BUFFS: {
+        SPEED: 2,
+        ATTACK: 1.5,
+        HEALTH: 10
+    },
+    BUFF_TIMEOUT: 10 * 10,
     PLAYER_HITBOX: 12,
     BULLET_SPEED: 30,
     BULLET_DAMAGE: () => { return rand(3, 9) },
@@ -105,7 +115,7 @@ function makeid(length) {
 }
 
 function rand(min, max) {
-    return Math.random() * (max - min) + min;
+    return Math.floor(Math.random() * (max - min) + min);
 }
 
 /**
@@ -371,7 +381,8 @@ app.route("/api/lobby")
                 players: {},
                 bullets: [],
                 powerups: [],
-                timeout: 0
+                timeout: 0,
+                nextpoweruptime: 0
             }
     
             console.log("Created game " + gameid)
@@ -421,7 +432,7 @@ io.on("connection", (socket) => {
 
         games[msg].players[socket.id] = {
             health: 100,
-            buffs: [],
+            buffs: {},
             position: {
                 x: 0,
                 y: 0
@@ -592,19 +603,19 @@ function gameTick() {
             }
 
             if (player.movement.up) {
-                player.position.y -= GAME_ARGS.MOVEMENT_SPEED
+                player.position.y += -GAME_ARGS.MOVEMENT_SPEED * (Object.keys(player.buffs).includes("speed")? GAME_ARGS.BUFFS.SPEED : 1)
             }
 
             if (player.movement.right) {
-                player.position.x += GAME_ARGS.MOVEMENT_SPEED
+                player.position.x += GAME_ARGS.MOVEMENT_SPEED * (Object.keys(player.buffs).includes("speed")? GAME_ARGS.BUFFS.SPEED : 1)
             }
 
             if (player.movement.down) {
-                player.position.y += GAME_ARGS.MOVEMENT_SPEED
+                player.position.y += GAME_ARGS.MOVEMENT_SPEED * (Object.keys(player.buffs).includes("speed")? GAME_ARGS.BUFFS.SPEED : 1)
             }
 
             if (player.movement.left) {
-                player.position.x -= GAME_ARGS.MOVEMENT_SPEED
+                player.position.x += -GAME_ARGS.MOVEMENT_SPEED * (Object.keys(player.buffs).includes("speed")? GAME_ARGS.BUFFS.SPEED : 1)
             }
 
             if (player.position.x > GAME_ARGS.WORLDBORDER) {
@@ -635,6 +646,7 @@ function gameTick() {
                     dx: deltas.dx,
                     dy: deltas.dy,
                     owner: players[p],
+                    damage: GAME_ARGS.BULLET_DAMAGE() * (Object.keys(game.players[players[p]].buffs).includes("attack")? GAME_ARGS.BUFFS.ATTACK : 1),
                     lifetime: 0
                 })
 
@@ -662,7 +674,7 @@ function gameTick() {
                 const player = game.players[players[p]];
 
                 if (Math.abs(player.position.x - bullet.x) < GAME_ARGS.PLAYER_HITBOX && Math.abs(player.position.y - bullet.y) < GAME_ARGS.PLAYER_HITBOX) {
-                    player.health -= GAME_ARGS.BULLET_DAMAGE()
+                    player.health -= bullet.damage
 
                     games[keys[i]].bullets.splice(b, 1)
                     b--;
@@ -670,6 +682,64 @@ function gameTick() {
                     break;
                 }
             }
+        }
+
+        for (var w = 0; w < game.powerups.length; w++) {
+            const powerup = game.powerups[w]
+
+            for (p = 0; p < players.length; p++) {
+                const player = game.players[players[p]];
+
+                if (Math.abs(player.position.x - powerup.position.x) < GAME_ARGS.POWERUP_HTIBOX && Math.abs(player.position.y - powerup.position.y) < GAME_ARGS.POWERUP_HTIBOX) {
+                    if (powerup.buff == "health") {
+                        player.health += GAME_ARGS.BUFFS.HEALTH;
+
+                        if (player.health > 100) {
+                            player.health = 100
+                        }
+                    }
+
+                    player.buffs[powerup.buff] = 0
+
+                    games[keys[i]].powerups.splice(w, 1)
+                    w--;
+
+                    break;
+                }
+            }
+        }
+
+        for (var m = 0; m < GAME_ARGS.POWERUP_POSSIBILITY.length; m++) {
+            for (p = 0; p < players.length; p++) {
+                const player = game.players[players[p]];
+
+                const buffloc = Object.keys(player.buffs).indexOf(GAME_ARGS.POWERUP_POSSIBILITY[m])
+
+                if (buffloc > -1) {
+                    if (player.buffs[GAME_ARGS.POWERUP_POSSIBILITY[m]] > GAME_ARGS.BUFF_TIMEOUT) {
+                        delete player.buffs[GAME_ARGS.POWERUP_POSSIBILITY[m]]
+                    } else {
+                        player.buffs[GAME_ARGS.POWERUP_POSSIBILITY[m]]++
+                    }
+                }
+            }
+        }
+
+        if (game.nextpoweruptime > GAME_ARGS.TICKS_BEFORE_POWERUP) {
+            if (game.powerups.length >= GAME_ARGS.MAX_POWERUPS) {
+                game.nextpoweruptime = GAME_ARGS.TICKS_BEFORE_POWERUP
+            } else {
+                game.powerups.push({
+                    position: {
+                        x: rand(-GAME_ARGS.WORLDBORDER, GAME_ARGS.WORLDBORDER),
+                        y: rand(-GAME_ARGS.WORLDBORDER, GAME_ARGS.WORLDBORDER)
+                    },
+                    buff: GAME_ARGS.POWERUP_POSSIBILITY[rand(0, GAME_ARGS.POWERUP_POSSIBILITY.length)]
+                })
+                game.nextpoweruptime = 0
+            }
+        } else {
+            game.nextpoweruptime++;
         }
 
         if (players.length < 1) {

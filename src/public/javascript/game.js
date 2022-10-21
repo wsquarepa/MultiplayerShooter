@@ -55,19 +55,19 @@
             if (player == null) continue;
 
             if (player.movement.up) {
-                player.position.y -= GAME_ARGS.MOVEMENT_SPEED
+                player.position.y += -GAME_ARGS.MOVEMENT_SPEED * (Object.keys(player.buffs).includes("speed")? 2 : 1)
             }
 
             if (player.movement.right) {
-                player.position.x += GAME_ARGS.MOVEMENT_SPEED
+                player.position.x += GAME_ARGS.MOVEMENT_SPEED * (Object.keys(player.buffs).includes("speed")? 2 : 1)
             }
 
             if (player.movement.down) {
-                player.position.y += GAME_ARGS.MOVEMENT_SPEED
+                player.position.y += GAME_ARGS.MOVEMENT_SPEED * (Object.keys(player.buffs).includes("speed")? 2 : 1)
             }
 
             if (player.movement.left) {
-                player.position.x -= GAME_ARGS.MOVEMENT_SPEED
+                player.position.x += -GAME_ARGS.MOVEMENT_SPEED * (Object.keys(player.buffs).includes("speed")? 2 : 1)
             }
         }
 
@@ -138,6 +138,20 @@
             ctx.fill()
         }
 
+        ctx.fillStyle = "#B9E5E1"
+
+        for (var w = 0; w < game.powerups.length; w++) {
+            const powerup = game.powerups[w]
+
+            ctx.beginPath()
+            ctx.arc(powerup.position.x, powerup.position.y, 7, 0, 2 * Math.PI)
+            ctx.fill()
+
+            ctx.fillText(powerup.buff.charAt(0).toUpperCase() + powerup.buff.substring(1), powerup.position.x, powerup.position.y - 25)
+        }
+
+        ctx.fillStyle = "#FFFFFF"
+
         const INTERVAL = 100
 
         ctx.strokeStyle = "#656d7d"
@@ -158,6 +172,17 @@
             ctx.lineTo(l, 2000)
             ctx.stroke()
         }
+
+        ctx.resetTransform()
+        ctx.textAlign = "left"
+
+        var buffStr = ""
+
+        for (var buff in Object.keys(mainPlayer.buffs)) {
+            buffStr += Object.keys(mainPlayer.buffs)[buff].charAt(0).toUpperCase() + Object.keys(mainPlayer.buffs)[buff].substring(1) + " "
+        }
+
+        ctx.fillText("Buffs: " + buffStr, 10, c.height - 10)
 
         requestAnimationFrame(frame)
     }
