@@ -14,7 +14,6 @@ const { Server } = require("socket.io");
 dotenv.config()
 
 const PORT = parseInt(process.env.PORT) || 8080
-const WSPORT = parseInt(process.env.WS_PORT) || 8081
 
 const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS) || 8
 const JWT_KEY = process.env.JWT_KEY || "secret"
@@ -382,16 +381,7 @@ app.route("/api/lobby")
             res.status(429).send('Too Many Requests | Try again in ' + e.msBeforeNext + "ms");
         });
     })
-
-app.get("/api/wsport", (req, res) => {
-    if (!req.cookies.token || checkAuth(req.cookies.token) == null) {
-        res.status(403).send("Unauthorized | No Authentication")
-        return;
-    }
-
-    res.send(WSPORT)
-})
-
+    
 app.use((req, res, next) => {
     res.status(404).send("404 | Resource Not Found")
 })
