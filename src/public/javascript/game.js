@@ -98,6 +98,12 @@
 
         ctx.translate(c.width / 2 - mainPlayer.position.x, c.height / 2 - mainPlayer.position.y)
 
+        ctx.strokeStyle = "#F08080"
+        ctx.lineWidth = 5
+        ctx.strokeRect(-2000, -2000, 4000, 4000) //Worldborder
+        ctx.strokeStyle = "#FFFFFF"
+        ctx.lineWidth = 1
+
         ctx.beginPath()
         ctx.arc(mainPlayer.position.x, mainPlayer.position.y, 10, 0, 2 * Math.PI)
         ctx.fill()
@@ -126,6 +132,27 @@
             ctx.beginPath()
             ctx.arc(bullet.x, bullet.y, 5, 0, 2 * Math.PI)
             ctx.fill()
+        }
+
+        const INTERVAL = 100
+
+        ctx.strokeStyle = "#656d7d"
+        for (var l = -2000; l < 2000; l++) {
+            if (l % INTERVAL != 0) continue;
+
+            ctx.beginPath()
+            ctx.moveTo(-2000, l)
+            ctx.lineTo(2000, l)
+            ctx.stroke()
+        }
+
+        for (l = -2000; l < 2000; l++) {
+            if (l % INTERVAL != 0) continue;
+
+            ctx.beginPath()
+            ctx.moveTo(l, -2000)
+            ctx.lineTo(l, 2000)
+            ctx.stroke()
         }
 
         requestAnimationFrame(frame)

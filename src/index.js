@@ -21,6 +21,7 @@ const JWT_KEY = process.env.JWT_KEY || "secret"
 const GAME_ARGS = {
     MOVEMENT_SPEED: 20,
     TICKS_BEFORE_GAME_TIMEOUT: 10 * 60, //1 Minute
+    WORLDBORDER: 2000,
     PLAYER_HITBOX: 12,
     BULLET_SPEED: 30,
     BULLET_DAMAGE: () => { return rand(3, 9) },
@@ -381,7 +382,7 @@ app.route("/api/lobby")
             res.status(429).send('Too Many Requests | Try again in ' + e.msBeforeNext + "ms");
         });
     })
-    
+
 app.use((req, res, next) => {
     res.status(404).send("404 | Resource Not Found")
 })
@@ -603,6 +604,22 @@ function gameTick() {
 
             if (player.movement.left) {
                 player.position.x -= GAME_ARGS.MOVEMENT_SPEED
+            }
+
+            if (player.position.x > GAME_ARGS.WORLDBORDER) {
+                player.position.x = GAME_ARGS.WORLDBORDER
+            }
+
+            if (player.position.x < -GAME_ARGS.WORLDBORDER) {
+                player.position.x = -GAME_ARGS.WORLDBORDER
+            }
+
+            if (player.position.y > GAME_ARGS.WORLDBORDER) {
+                player.position.y = GAME_ARGS.WORLDBORDER
+            }
+
+            if (player.position.y < -GAME_ARGS.WORLDBORDER) {
+                player.position.y = -GAME_ARGS.WORLDBORDER
             }
 
             if (player.firing && player.firecd < 1) {
