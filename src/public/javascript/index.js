@@ -82,14 +82,8 @@
                         const newButton = document.createElement("button")
                         newButton.innerHTML = "Create new game"
                     
-                        const spectatorLabel = document.createElement("label")
-                        spectatorLabel.innerHTML = "Spectator Mode: "
-                    
-                        const spectatorCheck = document.createElement("input")
-                        spectatorCheck.type = "checkbox"
-                    
                         joinButton.addEventListener("click", () => {
-                            location = "/game?id=" + input.value + (spectatorCheck.checked? "&spectator=true":"")
+                            location = "/game?id=" + input.value
                         })
                     
                         newButton.addEventListener("click", () => {
@@ -163,9 +157,6 @@
                         joinGameModal.appendChild(input)
                         joinGameModal.appendChild(joinButton)
                         joinGameModal.appendChild(newButton)
-                        joinGameModal.appendChild(document.createElement("br"))
-                        joinGameModal.appendChild(spectatorLabel)
-                        joinGameModal.appendChild(spectatorCheck)
 
                         block.appendChild(joinGameModal)
                         block.appendChild(document.createElement("hr"))
