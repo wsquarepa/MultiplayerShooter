@@ -100,6 +100,29 @@
 
         ctx.translate(c.width / 2 - mainPlayer.position.x, c.height / 2 - mainPlayer.position.y)
 
+        const INTERVAL = 100
+
+        ctx.strokeStyle = "#656d7d"
+        for (var l = -2000; l < 2000; l++) {
+            if (l % INTERVAL != 0) continue;
+
+            ctx.beginPath()
+            ctx.moveTo(-2000, l)
+            ctx.lineTo(2000, l)
+            ctx.stroke()
+        }
+
+        for (l = -2000; l < 2000; l++) {
+            if (l % INTERVAL != 0) continue;
+
+            ctx.beginPath()
+            ctx.moveTo(l, -2000)
+            ctx.lineTo(l, 2000)
+            ctx.stroke()
+        }
+
+        ctx.fillRect(-2, -2, 4, 4)
+
         ctx.strokeStyle = "#F08080"
         ctx.lineWidth = 5
         ctx.strokeRect(-2000, -2000, 4000, 4000) //Worldborder
@@ -112,8 +135,6 @@
 
         ctx.strokeRect(mainPlayer.position.x - 50, mainPlayer.position.y + 15, 100, 3.5)
         ctx.fillRect(mainPlayer.position.x - 50, mainPlayer.position.y + 15, mainPlayer.health, 3.5)
-
-        ctx.fillRect(-2, -2, 4, 4)
 
         for (p = 0; p < players.length; p++) {
             if (p == playerID) continue;
@@ -151,27 +172,6 @@
         }
 
         ctx.fillStyle = "#FFFFFF"
-
-        const INTERVAL = 100
-
-        ctx.strokeStyle = "#656d7d"
-        for (var l = -2000; l < 2000; l++) {
-            if (l % INTERVAL != 0) continue;
-
-            ctx.beginPath()
-            ctx.moveTo(-2000, l)
-            ctx.lineTo(2000, l)
-            ctx.stroke()
-        }
-
-        for (l = -2000; l < 2000; l++) {
-            if (l % INTERVAL != 0) continue;
-
-            ctx.beginPath()
-            ctx.moveTo(l, -2000)
-            ctx.lineTo(l, 2000)
-            ctx.stroke()
-        }
 
         ctx.resetTransform()
         ctx.textAlign = "left"
