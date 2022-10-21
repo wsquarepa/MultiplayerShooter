@@ -34,7 +34,7 @@ const GAME_ARGS = {
     BUFF_TIMEOUT: 10 * 10,
     PLAYER_HITBOX: 12,
     PLAYER_FIRECD: 1,
-    BULLET_SPEED: 50,
+    BULLET_SPEED: 40,
     BULLET_DAMAGE: () => { return rand(3, 9) },
     BULLET_RANGE: 500,
     BULLET_LIFETIME: 100
