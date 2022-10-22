@@ -8,11 +8,16 @@
         get: (searchParams, prop) => searchParams.get(prop),
     });
 
+    const BACKGROUND_AUDIO = [new Audio('audio_game_0.mp3'), new Audio('audio_game_1.mp3')]
+    const SHOOT_SFX = new Audio('shoot.mp3')
+    var audioIndex = 0;
+
     const GAME_ARGS = {
         MOVEMENT_SPEED: 20 / 10
     }
 
     var game = null;
+    var canShoot = true;
 
     var keysDown = [];
 
@@ -135,6 +140,15 @@
 
         ctx.strokeRect(mainPlayer.position.x - 50, mainPlayer.position.y + 15, 100, 3.5)
         ctx.fillRect(mainPlayer.position.x - 50, mainPlayer.position.y + 15, mainPlayer.health, 3.5)
+
+        if (mainPlayer.firecd > 0 && canShoot) {
+            SHOOT_SFX.volume = 0.15
+            SHOOT_SFX.currentTime = 0
+            SHOOT_SFX.play()
+            canShoot = false
+        }
+
+        if (mainPlayer.firecd == 0) canShoot = true;
 
         for (p = 0; p < players.length; p++) {
             if (p == playerID) continue;
@@ -279,6 +293,27 @@
 
     requestAnimationFrame(frame)
     setInterval(tick, 10)
+
+    for (var music = 0; music < BACKGROUND_AUDIO.length; music++) {
+        BACKGROUND_AUDIO[music].volume = 0.2
+        
+        BACKGROUND_AUDIO[music].addEventListener("ended", () => {
+            audioIndex++;
+            if (audioIndex >= BACKGROUND_AUDIO.length) {
+                audioIndex = 0;
+            }
+
+            BACKGROUND_AUDIO[audioIndex].play()
+        })
+    }
+
+    document.body.addEventListener("keydown", () => {
+        BACKGROUND_AUDIO[audioIndex].play()
+    })
+
+    document.body.addEventListener("mousedown", () => {
+        BACKGROUND_AUDIO[audioIndex].play()
+    })
 
     document.body.appendChild(c)
 })()

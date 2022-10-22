@@ -213,6 +213,11 @@ app.use(cookieParser())
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(express.static("src/public/css"))
+
+app.use(express.static("src/public/media/images"))
+app.use(express.static("src/public/media/sound"))
+
 app.get("/", (req, res) => {
     res.render('index')
 })
@@ -224,10 +229,6 @@ app.get("/game", (req, res) => {
     }
 
     res.render('game')
-})
-
-app.get("/stylesheet.css", (req, res) => {
-    res.send(fs.readFileSync("src/public/css/stylesheet.css"))
 })
 
 app.get("/index.js", (req, res) => {
