@@ -8,7 +8,7 @@
         get: (searchParams, prop) => searchParams.get(prop),
     });
 
-    const BACKGROUND_AUDIO = [new Audio('audio_game_0.mp3'), new Audio('audio_game_1.mp3')]
+    const BACKGROUND_AUDIO = [new Audio('audio_game_0.mp3'), new Audio('audio_game_1.mp3'), new Audio('audio_game_2.mp3'), new Audio('audio_game_3.mp3')]
     const SHOOT_SFX = new Audio('shoot.mp3')
     var audioIndex = 0;
 
