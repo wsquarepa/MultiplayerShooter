@@ -16,8 +16,19 @@
         MOVEMENT_SPEED: 20 / 10
     }
 
+    const BANNED_KEYS = ["Shift", "Meta", "Alt", "Control", "Tab", "CapsLock", "PageUp", "PageDown", "Home", "End", "Delete"]
+
     var game = null;
     var canShoot = true;
+
+    var chat = [];
+    var currentlyTyping = ""
+    var chatFocused = false
+
+    var lastPos = {
+        x: 0,
+        y: 0
+    }
 
     var keysDown = [];
 
@@ -46,6 +57,18 @@
 
     socket.on("game", (msg) => {
         game = JSON.parse(JSON.stringify(msg))
+
+        if (Object.keys(game.players).includes(socket.id)) {
+            lastPos = JSON.parse(JSON.stringify(game.players[socket.id].position))
+        }
+    })
+
+    socket.on("chatmessage", (msg) => {
+        chat.push(msg)
+
+        if (chat.length > 10) {
+            chat.shift()
+        }
     })
 
     function tick() {
@@ -101,7 +124,13 @@
 
         const players = Object.keys(game.players)
         const playerID = players.indexOf(socket.id)
-        const mainPlayer = game.players[players[playerID]]
+        const mainPlayer = game.players[players[playerID]] || {
+            position: {
+                x: lastPos.x,
+                y: lastPos.y
+            },
+            fake: true
+        }
 
         ctx.translate(c.width / 2 - mainPlayer.position.x, c.height / 2 - mainPlayer.position.y)
 
@@ -134,18 +163,22 @@
         ctx.strokeStyle = "#FFFFFF"
         ctx.lineWidth = 1
 
-        ctx.beginPath()
-        ctx.arc(mainPlayer.position.x, mainPlayer.position.y, 10, 0, 2 * Math.PI)
-        ctx.fill()
+        if (mainPlayer.fake) {
+            // do nothing, skip basically
+        } else {
+            ctx.beginPath()
+            ctx.arc(mainPlayer.position.x, mainPlayer.position.y, 10, 0, 2 * Math.PI)
+            ctx.fill()
+    
+            ctx.strokeRect(mainPlayer.position.x - 50, mainPlayer.position.y + 15, 100, 3.5)
+            ctx.fillRect(mainPlayer.position.x - 50, mainPlayer.position.y + 15, mainPlayer.health, 3.5)
 
-        ctx.strokeRect(mainPlayer.position.x - 50, mainPlayer.position.y + 15, 100, 3.5)
-        ctx.fillRect(mainPlayer.position.x - 50, mainPlayer.position.y + 15, mainPlayer.health, 3.5)
-
-        if (mainPlayer.firecd > 0 && canShoot) {
-            SHOOT_SFX.volume = 0.15
-            SHOOT_SFX.currentTime = 0
-            SHOOT_SFX.play()
-            canShoot = false
+            if (mainPlayer.firecd > 0 && canShoot) {
+                SHOOT_SFX.volume = 0.15
+                SHOOT_SFX.currentTime = 0
+                SHOOT_SFX.play()
+                canShoot = false
+            }
         }
 
         if (mainPlayer.firecd == 0) canShoot = true;
@@ -190,13 +223,34 @@
         ctx.resetTransform()
         ctx.textAlign = "left"
 
-        var buffStr = ""
+        if (mainPlayer.fake) {
+            //Skip basically
+        } else {
+            var buffStr = ""
+    
+            for (var buff in Object.keys(mainPlayer.buffs)) {
+                buffStr += Object.keys(mainPlayer.buffs)[buff].charAt(0).toUpperCase() + Object.keys(mainPlayer.buffs)[buff].substring(1) + " "
+            }
 
-        for (var buff in Object.keys(mainPlayer.buffs)) {
-            buffStr += Object.keys(mainPlayer.buffs)[buff].charAt(0).toUpperCase() + Object.keys(mainPlayer.buffs)[buff].substring(1) + " "
+            ctx.fillText("Buffs: " + buffStr, 10, 25)
         }
 
-        ctx.fillText("Buffs: " + buffStr, 10, c.height - 10)
+        ctx.font = "15px Comfortaa";
+
+        if (chatFocused) {
+            ctx.globalAlpha = 0.25
+            ctx.fillStyle = "#000000"
+            ctx.fillRect(0, 0, c.width, c.height)
+            ctx.globalAlpha = 1
+        }
+
+        ctx.fillStyle = "#FFFFFF"
+
+        for (var chatIteration = 0; chatIteration < chat.length; chatIteration++) {
+            ctx.fillText(chat[chatIteration], 10, c.height - 20 - ((chat.length - chatIteration) * 15))
+        }
+
+        ctx.fillText(currentlyTyping, 10, c.height - 15)
 
         requestAnimationFrame(frame)
     }
@@ -204,6 +258,33 @@
     document.addEventListener("keydown", (e) => {
         if (keysDown.includes(e.key)) return;
         keysDown.push(e.key)
+
+        if (chatFocused) {
+            if (e.key == "Enter") {
+                chatFocused = false;
+                socket.emit("chatmessage", currentlyTyping)
+                currentlyTyping = ""
+                return;
+            }
+
+            if (e.key == "Escape") {
+                chatFocused = false;
+                currentlyTyping = "";
+                return;
+            }
+
+            if (BANNED_KEYS.includes(e.key)) return;
+            if (e.key.startsWith("F") && e.key.length > 1) return;
+            if (e.key.startsWith("Arrow")) return;
+
+            if (e.key == "Backspace") {
+                currentlyTyping = currentlyTyping.substring(0, currentlyTyping.length - 1)
+                return;
+            }
+
+            currentlyTyping += e.key
+            return;
+        }
 
         switch (e.key) {
             case "w":
@@ -229,6 +310,9 @@
                     direction: "left",
                     enable: "1"
                 })
+                break;
+            case "t":
+                chatFocused = true;
                 break;
             default:
                 //nothing

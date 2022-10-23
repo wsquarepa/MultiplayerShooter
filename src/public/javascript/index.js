@@ -46,6 +46,68 @@
         }
     }
 
+    function refreshPublicGames() {
+        const publicGamesHolder = document.createElement("div")
+        publicGamesHolder.classList.add("center")
+
+        const publicGameLabel = document.createElement("div")
+        publicGameLabel.classList.add("center")
+        publicGameLabel.innerHTML = "Public Games"
+        publicGameLabel.style.fontSize = "18px"
+
+        const publicGameRefresh = document.createElement("button")
+        publicGameRefresh.classList.add("center")
+        publicGameRefresh.innerHTML = "Refresh"
+        publicGameRefresh.addEventListener("click", (e) => {
+            publicGamesHolder.remove()
+            refreshPublicGames()
+        })
+
+        publicGamesHolder.appendChild(publicGameLabel)
+        publicGamesHolder.appendChild(publicGameRefresh)
+
+        fetch("/api/publicGames")
+        .then(res => res.json())
+        .then(res => {
+            for (var i = 0; i < res.length; i++) {
+                const publicGame = document.createElement("div")
+
+                const publicGameName = document.createElement("div")
+                publicGameName.innerHTML = "Public Game " + i + " (" + res[i].players + " online)"
+                publicGameName.style.display = "inline-block"
+
+                const spacer = document.createElement("div")
+                spacer.style.width = "50px"
+                spacer.style.display = "inline-block"
+
+                const publicGameJoin = document.createElement("button")
+                publicGameJoin.style.float = "right"
+                publicGameJoin.id = res[i].id
+                publicGameJoin.innerHTML = "Join Game"
+                publicGameJoin.addEventListener("click", () => {
+                    location = "/game?id=" + publicGameJoin.id
+                })
+
+                publicGame.appendChild(publicGameName)
+                publicGame.appendChild(spacer)
+                publicGame.appendChild(publicGameJoin)
+
+                publicGamesHolder.appendChild(publicGame)
+            }
+
+            block.appendChild(publicGamesHolder)
+        })
+        .catch(() => {
+            const errorLabel = document.createElement("div")
+            errorLabel.classList.add("center")
+            errorLabel.style.fontSize = "18px"
+            errorLabel.style.color = "lightcoral"
+            errorLabel.innerHTML = "429 Too Many Requests"
+
+            block.appendChild(errorLabel)
+        })
+    }
+
     const main = document.createElement("div")
     main.classList.add("middle")
     main.style.width = "1000px"
@@ -183,7 +245,7 @@
                         const loadLabel = document.createElement("div")
                         const loadProgress = document.createElement("progress")
 
-                        const timeToWait = Math.random() * 2500;
+                        const timeToWait = Math.random() * 500;
                         var previousRandomAddition = -1;
 
                         loadHolder.classList.add("center")
@@ -215,12 +277,8 @@
                         }, timeToWait / 100)
 
                         setTimeout(() => {
-                            const noDataLabel = document.createElement("div")
-                            noDataLabel.innerHTML = "No Data Found."
-                            noDataLabel.classList.add("center")
-
+                            refreshPublicGames()
                             loadHolder.remove()
-                            block.appendChild(noDataLabel)
                         }, timeToWait)
                     })
                 } else {

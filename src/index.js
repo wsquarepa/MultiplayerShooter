@@ -60,6 +60,12 @@ const lobbyLimiter = new RateLimiterMemory({
     blockDuration: 60 * 5 //300 seconds | 5 minutes
 })
 
+const refreshLimiter = new RateLimiterMemory({
+    points: 10,
+    duration: 60,
+    blockDuration: 60
+})
+
 const app = express()
 const httpServer = createServer(app);
 const io = new Server(httpServer);
@@ -186,6 +192,16 @@ function calculateDelta(x1, y1, x2, y2, speed) {
     }
 }
 
+function getGameObject() {
+    return {
+        players: {},
+        bullets: [],
+        powerups: [],
+        timeout: 0,
+        nextpoweruptime: 0
+    }
+}
+
 // ==============================
 
 var userData = {}
@@ -203,6 +219,7 @@ if (fs.existsSync('data/userData.json')) {
 }
 
 var games = {}
+
 var userSessions = {}
 
 app.disable('x-powered-by');
@@ -379,13 +396,7 @@ app.route("/api/lobby")
         .then(() => {
             const gameid = makeid(8)
 
-            games[gameid] = {
-                players: {},
-                bullets: [],
-                powerups: [],
-                timeout: 0,
-                nextpoweruptime: 0
-            }
+            games[gameid] = getGameObject()
     
             console.log("Created game " + gameid)
             
@@ -395,6 +406,31 @@ app.route("/api/lobby")
             res.status(429).send('Too Many Requests | Try again in ' + e.msBeforeNext + "ms");
         });
     })
+
+app.get("/api/publicGames", (req, res) => {
+    if (!req.cookies.token || checkAuth(req.cookies.token) == null) {
+        res.status(403).send("Unauthorized | No Authentication")
+        return;
+    }
+
+    refreshLimiter.consume(req.ip).then(() => {
+        var gameList = [];
+    
+        for (var i = 0; i < Object.keys(games).length; i++) {
+            if (Object.keys(games)[i].startsWith("public_")) {
+                gameList.push({
+                    id: Object.keys(games)[i],
+                    players: Object.keys(games[Object.keys(games)[i]].players).length
+                })
+            }
+        }
+    
+        res.send(JSON.stringify(gameList))
+    })
+    .catch((e) => {
+        res.status(429).send('Too Many Requests | Try again in ' + e.msBeforeNext + "ms");
+    });
+})
 
 app.use((req, res, next) => {
     res.status(404).send("404 | Resource Not Found")
@@ -574,7 +610,9 @@ io.on("connection", (socket) => {
             return;
         }
 
-        socket.to(socket.data.game).emit("chatmessage", msg)
+        if (msg.trim().length < 1) return;
+
+        io.to(socket.data.game).emit("chatmessage", socket.data.auth + ": " + msg.trim().substring(0, 64))
     })
     
     socket.on("disconnect", (reason) => {
@@ -745,6 +783,8 @@ function gameTick() {
         }
 
         if (players.length < 1) {
+            if (keys[i].startsWith("public_")) continue;
+
             game.timeout++
 
             if (game.timeout > GAME_ARGS.TICKS_BEFORE_GAME_TIMEOUT) {
@@ -758,6 +798,10 @@ function gameTick() {
 
         io.to(keys[i]).emit("game", game)
     }
+}
+
+for (var _gameToCreate = 0; _gameToCreate < 5; _gameToCreate++) {
+    games["public_" + makeid(12)] = getGameObject();
 }
 
 setInterval(gameTick, 100)
