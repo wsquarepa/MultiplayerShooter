@@ -24,7 +24,7 @@ const GAME_ARGS = {
     TICKS_BEFORE_GAME_TIMEOUT: 10 * 60, //1 Minute
     WORLDBORDER: 2000,
     TICKS_BEFORE_POWERUP: 10 * 10, // 10 seconds,
-    MAX_POWERUPS: 10,
+    MAX_POWERUPS: 20,
     POWERUP_HTIBOX: 20,
     POWERUP_POSSIBILITY: ["attack", "health", "speed"],
     BUFFS: {
@@ -447,6 +447,18 @@ io.on("connection", (socket) => {
     socket.on("authentication", (msg) => {
         if (checkAuth(msg) != null) {
             socket.data.auth = checkAuth(msg);
+
+            io.fetchSockets().then(sockets => {
+                for (var i = 0; i < sockets.length; i++) {
+                    if (sockets[i].data.auth == socket.data.auth && sockets[i].id != socket.id) {
+                        console.warn("User " + socket.data.auth + " logged on from another location!")
+
+                        sockets[i].emit("error", "Logged on from another location")
+                        sockets[i].disconnect(true)
+                    }
+                }
+            })
+
             console.log("User Authentication | Username: " + socket.data.auth + " | ID: " + socket.id)
         } else {
             socket.disconnect(true)
@@ -714,7 +726,7 @@ function gameTick() {
             for (p = 0; p < players.length; p++) {
                 const player = game.players[players[p]];
 
-                if (Math.abs(player.position.x - bullet.x) < GAME_ARGS.PLAYER_HITBOX && Math.abs(player.position.y - bullet.y) < GAME_ARGS.PLAYER_HITBOX) {
+                if (Math.abs(player.position.x - bullet.x) < GAME_ARGS.PLAYER_HITBOX && Math.abs(player.position.y - bullet.y) < GAME_ARGS.PLAYER_HITBOX && bullet.owner != players[p]) {
                     player.health -= bullet.damage
 
                     games[keys[i]].bullets.splice(b, 1)

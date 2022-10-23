@@ -12,6 +12,8 @@
     const SHOOT_SFX = new Audio('shoot.mp3')
     var audioIndex = 0;
 
+    var error = ""
+
     const GAME_ARGS = {
         MOVEMENT_SPEED: 20 / 10
     }
@@ -71,6 +73,10 @@
         }
     })
 
+    socket.on("error", (msg) => {
+        error = msg
+    })
+    
     function tick() {
         if (game == null) {
             return;
@@ -251,6 +257,16 @@
         }
 
         ctx.fillText(currentlyTyping, 10, c.height - 15)
+
+        if (error.length > 0) {
+            ctx.clearRect(0, 0, c.width, c.height)
+
+            ctx.font = "64px Comfortaa";
+            ctx.fillStyle = "#F08080"
+            ctx.textAlign = "center"
+            ctx.fillText("===ERROR===", c.width / 2, c.height / 2 - 35)
+            ctx.fillText(error, c.width / 2, c.height / 2 + 35)
+        }
 
         requestAnimationFrame(frame)
     }
