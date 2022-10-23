@@ -19,6 +19,7 @@ const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS) || 8
 const JWT_KEY = process.env.JWT_KEY || "secret"
 
 const GAME_ARGS = {
+    PUBLIC_LOBBIES: 5,
     MOVEMENT_SPEED: 20,
     TICKS_BEFORE_GAME_TIMEOUT: 10 * 60, //1 Minute
     WORLDBORDER: 2000,
@@ -800,9 +801,13 @@ function gameTick() {
     }
 }
 
-for (var _gameToCreate = 0; _gameToCreate < 5; _gameToCreate++) {
-    games["public_" + makeid(12)] = getGameObject();
+console.log("Creating public lobbies...")
+for (var _gameToCreate = 0; _gameToCreate < GAME_ARGS.PUBLIC_LOBBIES; _gameToCreate++) {
+    const lobbyID = makeid(12)
+    games["public_" + lobbyID] = getGameObject();
+    console.log(clc.magenta.italic("[PUBLIC LOBBY] ") + "Created public lobby " + lobbyID + " (" + _gameToCreate + ")")
 }
+console.log("Created " + GAME_ARGS.PUBLIC_LOBBIES + " public lobbies")
 
 setInterval(gameTick, 100)
 
@@ -824,6 +829,8 @@ if (DEBUG) {
                 fs.writeFileSync("data/userData.json", JSON.stringify(userData));
                 console.log("Shutting down WebSocket connections")
                 console.log("Shutting down Express server")
+                console.log("Shutting down all games")
+                games = {};
                 console.log("Shutdown process completed.")
                 process.exit()
             default:
