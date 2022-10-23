@@ -38,7 +38,12 @@ const GAME_ARGS = {
     BULLET_SPEED: 30,
     BULLET_DAMAGE: () => { return rand(3, 9) },
     BULLET_RANGE: 500,
-    BULLET_LIFETIME: 100
+    BULLET_LIFETIME: 100,
+    ANTICHEAT: {
+        MAX_VLS: 100,
+        DISPLAY_EVERY: 8,
+        MAX_MOUSE_DISTANCE: 500
+    }
 }
 
 const DEBUG = process.env.DEBUG || true
@@ -203,6 +208,45 @@ function getGameObject() {
     }
 }
 
+function createACProfile(id) {
+    anticheat.players[id] = {
+        checkVls: {},
+        data: {}
+    }
+
+    return anticheat.players[id]
+}
+
+function violate(id, checkName) {
+    if (anticheat.players[id]) {
+        if (anticheat.players[id].checkVls[checkName]) {
+            anticheat.players[id].checkVls[checkName]++;
+
+            if (anticheat.players[id].checkVls[checkName] > GAME_ARGS.ANTICHEAT.MAX_VLS) {
+                io.fetchSockets().then(sockets => {
+                    const socket = sockets.find(x => x.id == id)
+                    if (socket) {
+                        console.warn(clc.bold.red("[ANTICHEAT]") + " " + clc.cyan(id) + clc.white(" was disconnected due to ANTICHEAT INFRACTION"))
+
+                        socket.emit("error", "Anticheat Disconnect")
+                        socket.disconnect(true)
+                    }
+                })
+            }
+        } else {
+            anticheat.players[id].checkVls[checkName] = 1
+        }
+    } else {
+        createACProfile(id)
+
+        anticheat.players[id].checkVls[checkName] = 1
+    }
+
+    if (anticheat.players[id].checkVls[checkName] % GAME_ARGS.ANTICHEAT.DISPLAY_EVERY == 0) {
+        console.warn(clc.bold.red("[ANTICHEAT]") + " " + clc.cyan(id) + clc.white(" violated ") + clc.cyan(checkName) + " (x" + anticheat.players[id].checkVls[checkName] + ")")
+    }
+}
+
 // ==============================
 
 var userData = {}
@@ -220,6 +264,10 @@ if (fs.existsSync('data/userData.json')) {
 }
 
 var games = {}
+var anticheat = {
+    players: {},
+    chat: {}
+}
 
 var userSessions = {}
 
@@ -504,6 +552,8 @@ io.on("connection", (socket) => {
             username: socket.data.auth
         }
 
+        createACProfile(socket.id)
+
         console.log("User Game Join | Game: " + socket.data.game + " | ID: " + socket.id)
 
         socket.emit("ack", "0")
@@ -521,7 +571,6 @@ io.on("connection", (socket) => {
         }
 
         if (games[socket.data.game].players[socket.id] == null) {
-            socket.emit("error", "No Game")
             return;
         }
 
@@ -572,7 +621,6 @@ io.on("connection", (socket) => {
         }
 
         if (games[socket.data.game].players[socket.id] == null) {
-            socket.emit("error", "No Game")
             return;
         }
 
@@ -585,12 +633,27 @@ io.on("connection", (socket) => {
 
         const packet = JSON.parse(JSON.stringify(msg))
 
-        if (packet.x == null || packet.y == null) {
+        if (packet.x == null || packet.y == null || typeof packet.x != "number" || typeof packet.y != "number" || packet.x == NaN || packet.y == NaN) {
             socket.emit("error", "Invalid Movement Packet")
             return;
         }
 
+        if (anticheat.players[socket.id].data.mousepos) {
+            const distance = Math.sqrt(Math.pow(anticheat.players[socket.id].data.mousepos.x - packet.x, 2) + Math.pow(anticheat.players[socket.id].data.mousepos.y - packet.y, 2))
+
+            if (distance > GAME_ARGS.ANTICHEAT.MAX_MOUSE_DISTANCE) {
+                socket.emit("warn", "Suspicious Movement Packet")
+                violate(socket.id, "MousePos")
+                return;
+            }
+        }
+
         games[socket.data.game].players[socket.id].mousePosition = {
+            x: packet.x,
+            y: packet.y
+        }
+
+        anticheat.players[socket.id].data.mousepos = {
             x: packet.x,
             y: packet.y
         }
@@ -604,7 +667,6 @@ io.on("connection", (socket) => {
         }
 
         if (games[socket.data.game].players[socket.id] == null) {
-            socket.emit("error", "No Game")
             return;
         }
 
@@ -625,6 +687,17 @@ io.on("connection", (socket) => {
 
         if (msg.trim().length < 1) return;
 
+        if (anticheat.chat[socket.data.auth]) {
+            anticheat.chat[socket.data.auth] += msg.trim().length;
+        } else {
+            anticheat.chat[socket.data.auth] = msg.trim().length;
+        }
+
+        if (anticheat.chat[socket.data.auth] > 100) {
+            socket.emit("chatmessage", "> You are chatting too fast.")
+            return;
+        }
+
         io.to(socket.data.game).emit("chatmessage", socket.data.auth + ": " + msg.trim().substring(0, 64))
     })
     
@@ -632,6 +705,8 @@ io.on("connection", (socket) => {
         if (socket.data.game != null && games[socket.data.game] != null && games[socket.data.game].players[socket.id] != null) {
             games[socket.data.game].players[socket.id].disconnected = true;
         }
+
+        delete anticheat.players[socket.id]
 
         console.log("User Disconnect | Reason: " + reason + " | ID: " + socket.id)
     })
@@ -712,7 +787,7 @@ function gameTick() {
         for (var b = 0; b < game.bullets.length; b++) {
             const bullet = game.bullets[b]
 
-            if (Math.sqrt(Math.abs(bullet.sx - bullet.x) + Math.abs(bullet.sy - bullet.y)) > GAME_ARGS.BULLET_RANGE || bullet.lifetime > GAME_ARGS.BULLET_LIFETIME) {
+            if (Math.sqrt(Math.pow(bullet.sx - bullet.x) + Math.pow(bullet.sy - bullet.y)) > GAME_ARGS.BULLET_RANGE || bullet.lifetime > GAME_ARGS.BULLET_LIFETIME) {
                 games[keys[i]].bullets.splice(b, 1)
                 b--;
                 continue;
@@ -810,6 +885,12 @@ function gameTick() {
         }
 
         io.to(keys[i]).emit("game", game)
+    }
+
+    for (i = 0; i < Object.keys(anticheat.chat).length; i++) {
+        anticheat.chat[Object.keys(anticheat.chat)] -= 1;
+
+        if (anticheat.chat[Object.keys(anticheat.chat)] < 0) anticheat.chat[Object.keys(anticheat.chat)] = 0;
     }
 }
 
