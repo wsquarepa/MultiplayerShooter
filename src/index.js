@@ -641,7 +641,7 @@ io.on("connection", (socket) => {
         if (anticheat.players[socket.id].data.mousepos) {
             const distance = Math.sqrt(Math.pow(anticheat.players[socket.id].data.mousepos.x - packet.x, 2) + Math.pow(anticheat.players[socket.id].data.mousepos.y - packet.y, 2))
 
-            if (distance > GAME_ARGS.ANTICHEAT.MAX_MOUSE_DISTANCE) {
+            if (distance > GAME_ARGS.ANTICHEAT.MAX_MOUSE_DISTANCE || distance == 0) {
                 socket.emit("warn", "Suspicious Movement Packet")
                 violate(socket.id, "MousePos")
                 return;
