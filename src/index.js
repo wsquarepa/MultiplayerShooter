@@ -80,7 +80,7 @@ instrument(io, {
     auth: {
         type: "basic",
         username: "wsquarepa",
-        password: "$2b$10$EJ5sXh0f1cTWYVnqsURAIuusuPzjqLX.D8.KZfBz4Q/x6JlUdjo5e"
+        password: process.env.ADMIN_PASS || "$2b$10$MpvhUG3v5/JOn/aro9TnBuRB8HYR/5nSVqTL1ZOyjoUJhJPyqeBZK" // "admin"
     }
 })
 
