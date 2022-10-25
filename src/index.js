@@ -79,7 +79,7 @@ const io = new Server(httpServer);
 instrument(io, {
     auth: {
         type: "basic",
-        username: "wsquarepa",
+        username: process.env.ADMIN_USERNAME || "admin",
         password: process.env.ADMIN_PASS || "$2b$10$MpvhUG3v5/JOn/aro9TnBuRB8HYR/5nSVqTL1ZOyjoUJhJPyqeBZK" // "admin"
     }
 })
