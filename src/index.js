@@ -10,6 +10,7 @@ const readline = require("readline");
 const { RateLimiterMemory } = require('rate-limiter-flexible')
 const { createServer } = require("http");
 const { Server } = require("socket.io");
+const { instrument } = require("@socket.io/admin-ui")
 
 dotenv.config()
 
@@ -75,6 +76,13 @@ const refreshLimiter = new RateLimiterMemory({
 const app = express()
 const httpServer = createServer(app);
 const io = new Server(httpServer);
+instrument(io, {
+    auth: {
+        type: "basic",
+        username: "wsquarepa",
+        password: "$2b$10$EJ5sXh0f1cTWYVnqsURAIuusuPzjqLX.D8.KZfBz4Q/x6JlUdjo5e"
+    }
+})
 
 // ===== Console Log Inject =====
 
