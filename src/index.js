@@ -187,6 +187,18 @@ function createAuthToken(username, ip, expiresIn = "1d") {
     return jwt.sign({session: randomID}, JWT_KEY, {expiresIn: expiresIn})
 }
 
+/**
+ * Checks authentication for administrator portal
+ * WARNING! If you don't set the environment variable "ADMIN_USERNAME", it will accept connections from everyone!
+ * @param {Express.Request} req Request
+ * @returns Wether or not they are permitted to access the portal.
+ */
+function checkAdminAuth(req) {
+    if (!process.env.ADMIN_USERNAME) return false;
+
+    return !req.cookies.token || checkAuth(req.cookies.token) == null || checkAuth(req.cookies.token) != process.env.ADMIN_USERNAME
+}
+
 function calculateDelta(x1, y1, x2, y2, speed) {
     if ((x2 - x1) == 0) {
         return {
@@ -487,6 +499,42 @@ app.get("/api/publicGames", (req, res) => {
     .catch((e) => {
         res.status(429).send('Too Many Requests | Try again in ' + e.msBeforeNext + "ms");
     });
+})
+
+app.get("/admin", (req, res) => {
+    if (checkAdminAuth(req)) {
+        res.send("Invalid authentication")
+        return;
+    }
+
+    res.sendFile(__dirname + "/admin/index.html")
+})
+
+app.get("/admin/css/:endpoint", (req, res) => {
+    if (checkAdminAuth(req)) {
+        res.send("Invalid authentication")
+        return;
+    }
+
+    res.sendFile(__dirname + "/admin/css/" + req.params.endpoint)
+})
+
+app.get("/admin/js/:endpoint", (req, res) => {
+    if (checkAdminAuth(req)) {
+        res.send("Invalid authentication")
+        return;
+    }
+    
+    res.sendFile(__dirname + "/admin/js/" + req.params.endpoint)
+})
+
+app.get("/admin/img/:endpoint", (req, res) => {
+    if (checkAdminAuth(req)) {
+        res.send("Invalid authentication")
+        return;
+    }
+    
+    res.sendFile(__dirname + "/admin/img/" + req.params.endpoint)
 })
 
 app.use((req, res, next) => {
