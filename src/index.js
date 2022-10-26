@@ -510,7 +510,7 @@ app.get("/admin", (req, res) => {
     res.sendFile(__dirname + "/admin/index.html")
 })
 
-app.get("/admin/css/:endpoint", (req, res) => {
+app.get("(/admin)?/css/:endpoint", (req, res) => {
     if (checkAdminAuth(req)) {
         res.send("Invalid authentication")
         return;
@@ -519,7 +519,7 @@ app.get("/admin/css/:endpoint", (req, res) => {
     res.sendFile(__dirname + "/admin/css/" + req.params.endpoint)
 })
 
-app.get("/admin/js/:endpoint", (req, res) => {
+app.get("(/admin)?/js/:endpoint", (req, res) => {
     if (checkAdminAuth(req)) {
         res.send("Invalid authentication")
         return;
@@ -528,7 +528,7 @@ app.get("/admin/js/:endpoint", (req, res) => {
     res.sendFile(__dirname + "/admin/js/" + req.params.endpoint)
 })
 
-app.get("/admin/img/:endpoint", (req, res) => {
+app.get("(/admin)?/img/:endpoint", (req, res) => {
     if (checkAdminAuth(req)) {
         res.send("Invalid authentication")
         return;
