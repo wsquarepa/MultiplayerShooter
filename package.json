@@ -4,7 +4,8 @@
   "description": "Multiplayer Shooter Game, POC Websocket",
   "main": "src/index.js",
   "scripts": {
-    "test": "node ."
+    "test": "node .",
+    "start": "node ."
   },
   "repository": {
     "type": "git",
