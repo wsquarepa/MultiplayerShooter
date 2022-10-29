@@ -194,9 +194,7 @@ function createAuthToken(username, ip, expiresIn = "1d") {
  * @returns Wether or not they are permitted to access the portal.
  */
 function checkAdminAuth(req) {
-    if (!process.env.ADMIN_USERNAME) return false;
-
-    return !req.cookies.token || checkAuth(req.cookies.token) == null || checkAuth(req.cookies.token) != process.env.ADMIN_USERNAME
+    return req.cookies.token && checkAuth(req.cookies.token) != null && userData[checkAuth(req.cookies.token)].admin
 }
 
 function calculateDelta(x1, y1, x2, y2, speed) {
@@ -237,12 +235,12 @@ function createACProfile(id) {
     return anticheat.players[id]
 }
 
-function violate(id, checkName) {
+function violate(id, checkName, disconnect = true) {
     if (anticheat.players[id]) {
         if (anticheat.players[id].checkVls[checkName]) {
             anticheat.players[id].checkVls[checkName]++;
 
-            if (anticheat.players[id].checkVls[checkName] > GAME_ARGS.ANTICHEAT.MAX_VLS) {
+            if (anticheat.players[id].checkVls[checkName] > GAME_ARGS.ANTICHEAT.MAX_VLS && disconnect) {
                 io.fetchSockets().then(sockets => {
                     const socket = sockets.find(x => x.id == id)
                     if (socket) {
@@ -331,12 +329,12 @@ app.get("/game.js", (req, res) => {
 })
 
 app.get("/login", (req, res) => {
-    res.status("405")
+    res.status(405)
     res.send("Invalid usage")
 })
 
 app.get("/register", (req, res) => {
-    res.status("405")
+    res.status(405)
     res.send("Invalid usage")
 })
 
@@ -502,7 +500,7 @@ app.get("/api/publicGames", (req, res) => {
 })
 
 app.get("/admin", (req, res) => {
-    if (checkAdminAuth(req)) {
+    if (!checkAdminAuth(req)) {
         res.send("Invalid authentication")
         return;
     }
@@ -511,7 +509,7 @@ app.get("/admin", (req, res) => {
 })
 
 app.get("(/admin)?/css/:endpoint", (req, res) => {
-    if (checkAdminAuth(req)) {
+    if (!checkAdminAuth(req)) {
         res.send("Invalid authentication")
         return;
     }
@@ -520,7 +518,7 @@ app.get("(/admin)?/css/:endpoint", (req, res) => {
 })
 
 app.get("(/admin)?/js/:endpoint", (req, res) => {
-    if (checkAdminAuth(req)) {
+    if (!checkAdminAuth(req)) {
         res.send("Invalid authentication")
         return;
     }
@@ -529,7 +527,7 @@ app.get("(/admin)?/js/:endpoint", (req, res) => {
 })
 
 app.get("(/admin)?/img/:endpoint", (req, res) => {
-    if (checkAdminAuth(req)) {
+    if (!checkAdminAuth(req)) {
         res.send("Invalid authentication")
         return;
     }
@@ -698,8 +696,7 @@ io.on("connection", (socket) => {
             const distance = Math.sqrt(Math.pow(anticheat.players[socket.id].data.mousepos.x - packet.x, 2) + Math.pow(anticheat.players[socket.id].data.mousepos.y - packet.y, 2))
 
             if (distance > GAME_ARGS.ANTICHEAT.MAX_MOUSE_DISTANCE) {
-                socket.emit("warn", "Suspicious Movement Packet")
-                violate(socket.id, "MousePos")
+                violate(socket.id, "MousePos", false)
                 return;
             }
         }
