@@ -226,6 +226,47 @@ function getGameObject() {
     }
 }
 
+function sterilizeGame(game) {
+    var result = getGameObject()
+
+    const keys = Object.keys(game.players)
+    
+    for (var i = 0; i < keys.length; i++) {
+        const player = game.players[keys[i]];
+
+        result.players[keys[i]] = {
+            health: player.health,
+            buffs: (Object.keys(player.buffs).includes("speed")? {
+                speed: 0
+            }:{}),
+            position: player.position,
+            movement: player.movement,
+            username: player.username
+        }
+    }
+
+    for (i = 0; i < game.bullets.length; i++) {
+        const bullet = game.bullets[i]
+
+        result.bullets.push({
+            x: bullet.x,
+            y: bullet.y,
+            dx: bullet.dx,
+            dy: bullet.dy
+        })
+    }
+
+    for (i = 0; i < game.powerups.length; i++) {
+        const powerup = game.powerups[i]
+
+        result.powerups.push({
+            position: powerup.position
+        })
+    }
+
+    return result;
+}
+
 function createACProfile(id) {
     anticheat.players[id] = {
         checkVls: {},
@@ -937,7 +978,7 @@ function gameTick() {
             }
         }
 
-        io.to(keys[i]).emit("game", game)
+        io.to(keys[i]).emit("game", sterilizeGame(game))
     }
 
     for (i = 0; i < Object.keys(anticheat.chat).length; i++) {

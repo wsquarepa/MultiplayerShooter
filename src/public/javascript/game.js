@@ -32,6 +32,8 @@
         y: 0
     }
 
+    var mousePos;
+
     var keysDown = [];
 
     function getCookie(cname) {
@@ -220,26 +222,12 @@
             ctx.beginPath()
             ctx.arc(powerup.position.x, powerup.position.y, 7, 0, 2 * Math.PI)
             ctx.fill()
-
-            ctx.fillText(powerup.buff.charAt(0).toUpperCase() + powerup.buff.substring(1), powerup.position.x, powerup.position.y - 25)
         }
 
         ctx.fillStyle = "#FFFFFF"
 
         ctx.resetTransform()
         ctx.textAlign = "left"
-
-        if (mainPlayer.fake) {
-            //Skip basically
-        } else {
-            var buffStr = ""
-    
-            for (var buff in Object.keys(mainPlayer.buffs)) {
-                buffStr += Object.keys(mainPlayer.buffs)[buff].charAt(0).toUpperCase() + Object.keys(mainPlayer.buffs)[buff].substring(1) + " "
-            }
-
-            ctx.fillText("Buffs: " + buffStr, 10, 25)
-        }
 
         ctx.font = "15px Comfortaa";
 
@@ -259,13 +247,27 @@
         ctx.fillText(currentlyTyping, 10, c.height - 15)
 
         if (error.length > 0) {
-            ctx.clearRect(0, 0, c.width, c.height)
-
             ctx.font = "64px Comfortaa";
             ctx.fillStyle = "#F08080"
             ctx.textAlign = "center"
             ctx.fillText("===ERROR===", c.width / 2, c.height / 2 - 35)
             ctx.fillText(error, c.width / 2, c.height / 2 + 35)
+        }
+
+        if (mousePos != null) {
+            ctx.beginPath()
+            ctx.arc(mousePos.x, mousePos.y, 8, 0, 2 * Math.PI)
+            ctx.stroke()
+
+            ctx.beginPath()
+            ctx.moveTo(mousePos.x + 10, mousePos.y + 10)
+            ctx.lineTo(mousePos.x - 10, mousePos.y - 10)
+            ctx.stroke()
+
+            ctx.beginPath()
+            ctx.moveTo(mousePos.x - 10, mousePos.y + 10)
+            ctx.lineTo(mousePos.x + 10, mousePos.y - 10)
+            ctx.stroke()
         }
 
         requestAnimationFrame(frame)
@@ -383,6 +385,11 @@
             x: e.x - c.width / 2,
             y: e.y - c.height / 2
         })
+
+        mousePos = {
+            x: e.x,
+            y: e.y
+        }
     })
 
     socket.emit("authentication", getCookie("token"))
