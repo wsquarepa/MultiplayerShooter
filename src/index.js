@@ -696,7 +696,7 @@ io.on("connection", (socket) => {
             const distance = Math.sqrt(Math.pow(anticheat.players[socket.id].data.mousepos.x - packet.x, 2) + Math.pow(anticheat.players[socket.id].data.mousepos.y - packet.y, 2))
 
             if (distance > GAME_ARGS.ANTICHEAT.MAX_MOUSE_DISTANCE) {
-                violate(socket.id, "MousePos", false)
+                violate(socket.id, "MousePos")
                 return;
             }
         }
