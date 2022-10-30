@@ -40,8 +40,8 @@
         let name = cname + "=";
         let decodedCookie = decodeURIComponent(document.cookie);
         let ca = decodedCookie.split(';');
-        for(let i = 0; i < ca.length; i++) {
-            let c = ca[i];
+        for (const element of ca) {
+            let c = element;
             while (c.charAt(0) == ' ') {
                 c = c.substring(1);
             }
@@ -85,8 +85,8 @@
         }
 
         const players = Object.keys(game.players)
-        for (let p = 0; p < players.length; p++) {
-            const player = game.players[players[p]];
+        for (const element of players) {
+            const player = game.players[element];
 
             if (player == null) continue;
 
@@ -107,8 +107,8 @@
             }
         }
 
-        for (let b = 0; b < game.bullets.length; b++) {
-            const bullet = game.bullets[b]
+        for (const element of game.bullets) {
+            const bullet = element
 
             bullet.x += bullet.dx / 10
             bullet.y += bullet.dy / 10
@@ -154,7 +154,7 @@
             ctx.stroke()
         }
 
-        for (l = -2000; l < 2000; l++) {
+        for (let l = -2000; l < 2000; l++) {
             if (l % INTERVAL != 0) continue;
 
             ctx.beginPath()
@@ -191,7 +191,7 @@
 
         if (mainPlayer.firecd == 0) canShoot = true;
 
-        for (p = 0; p < players.length; p++) {
+        for (let p = 0; p < players.length; p++) {
             if (p == playerID) continue;
 
             const player = game.players[players[p]];
@@ -206,8 +206,8 @@
             ctx.fillText(player.username, player.position.x, player.position.y - 25)
         }
 
-        for (let b = 0; b < game.bullets.length; b++) {
-            const bullet = game.bullets[b]
+        for (const element of game.bullets) {
+            const bullet = element
 
             ctx.beginPath()
             ctx.arc(bullet.x, bullet.y, 5, 0, 2 * Math.PI)
@@ -216,8 +216,8 @@
 
         ctx.fillStyle = "#B9E5E1"
 
-        for (let w = 0; w < game.powerups.length; w++) {
-            const powerup = game.powerups[w]
+        for (const element of game.powerups) {
+            const powerup = element
 
             ctx.beginPath()
             ctx.arc(powerup.position.x, powerup.position.y, 7, 0, 2 * Math.PI)
