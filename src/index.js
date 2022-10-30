@@ -95,17 +95,17 @@ const _oldConsoleWarn = console.warn
 const _oldConsoleError = console.error
 
 console.log = function() {  
-    var args = Array.from(arguments); // ES5
+    let args = Array.from(arguments); // ES5
     args.unshift("(" + clc.italic(getLogPrefix()) + ") " + clc.blue.bold("[I]"));
     
     _oldConsoleLog.apply(console, args);
 }
 
 console.warn = function() {  
-    var args = Array.from(arguments); // ES5
+    let args = Array.from(arguments); // ES5
     args.unshift("(" + clc.italic(getLogPrefix()) + ") " + clc.yellow.bold("[W]"));
 
-    for (var i = 1; i < args.length; i++) {
+    for (let i = 1; i < args.length; i++) {
         args[i] = clc.yellow(args[i])
     }
     
@@ -113,10 +113,10 @@ console.warn = function() {
 }
 
 console.error = function() {  
-    var args = Array.from(arguments); // ES5
+    let args = Array.from(arguments); // ES5
     args.unshift("(" + clc.italic(getLogPrefix()) + ") " + clc.red.bold("[E]"));
 
-    for (var i = 1; i < args.length; i++) {
+    for (let i = 1; i < args.length; i++) {
         args[i] = clc.red(args[i])
     }
     
@@ -126,10 +126,10 @@ console.error = function() {
 // ==============================
 
 function makeid(length) {
-    var result = '';
-    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for ( var i = 0; i < length; i++ ) {
+    let result = '';
+    let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
@@ -145,7 +145,7 @@ function rand(min, max) {
  * @returns null if invalid token, username otherwise
  */
 function checkAuth(token, ip = null) {
-    var decodedtoken = null;
+    let decodedtoken = null;
     try {
         decodedtoken = jwt.verify(token, JWT_KEY)
     } catch {
@@ -227,11 +227,13 @@ function getGameObject() {
 }
 
 function sterilizeGame(game) {
-    var result = getGameObject()
+    let result = getGameObject()
 
     const keys = Object.keys(game.players)
     
-    for (var i = 0; i < keys.length; i++) {
+    let i;
+
+    for (i = 0; i < keys.length; i++) {
         const player = game.players[keys[i]];
 
         result.players[keys[i]] = {
@@ -241,7 +243,8 @@ function sterilizeGame(game) {
             }:{}),
             position: player.position,
             movement: player.movement,
-            username: player.username
+            username: player.username,
+            firecd: player.firecd
         }
     }
 
@@ -308,7 +311,7 @@ function violate(id, checkName, disconnect = true) {
 
 // ==============================
 
-var userData = {}
+let userData = {}
 
 if (!fs.existsSync("data/")) {
     fs.mkdirSync("data")
@@ -322,13 +325,13 @@ if (fs.existsSync('data/userData.json')) {
     console.warn("No old userdata.json file found, creating new...")
 }
 
-var games = {}
-var anticheat = {
+let games = {}
+let anticheat = {
     players: {},
     chat: {}
 }
 
-var userSessions = {}
+let userSessions = {}
 
 app.disable('x-powered-by');
 app.set('view engine', 'ejs');
@@ -522,9 +525,9 @@ app.get("/api/publicGames", (req, res) => {
     }
 
     refreshLimiter.consume(req.ip).then(() => {
-        var gameList = [];
+        let gameList = [];
     
-        for (var i = 0; i < Object.keys(games).length; i++) {
+        for (let i = 0; i < Object.keys(games).length; i++) {
             if (Object.keys(games)[i].startsWith("public_")) {
                 gameList.push({
                     id: Object.keys(games)[i],
@@ -592,7 +595,7 @@ io.on("connection", (socket) => {
             socket.data.auth = checkAuth(msg);
 
             io.fetchSockets().then(sockets => {
-                for (var i = 0; i < sockets.length; i++) {
+                for (let i = 0; i < sockets.length; i++) {
                     if (sockets[i].data.auth == socket.data.auth && sockets[i].id != socket.id) {
                         console.warn("User " + socket.data.auth + " logged on from another location!")
 
@@ -728,7 +731,7 @@ io.on("connection", (socket) => {
 
         const packet = JSON.parse(JSON.stringify(msg))
 
-        if (packet.x == null || packet.y == null || typeof packet.x != "number" || typeof packet.y != "number" || packet.x == NaN || packet.y == NaN) {
+        if (packet.x == null || packet.y == null || typeof packet.x != "number" || typeof packet.y != "number" || isNaN(packet.x) || isNaN(packet.y)) {
             socket.emit("error", "Invalid Movement Packet")
             return;
         }
@@ -808,11 +811,11 @@ io.on("connection", (socket) => {
 
 function gameTick() {
     const keys = Object.keys(games)
-    for (var i = 0; i < keys.length; i++) {
+    for (let i = 0; i < keys.length; i++) {
         const game = games[keys[i]]
 
         const players = Object.keys(game.players)
-        for (var p = 0; p < players.length; p++) {
+        for (let p = 0; p < players.length; p++) {
             const player = game.players[players[p]];
 
             if (player == null) continue;
@@ -878,7 +881,7 @@ function gameTick() {
             }
         }
 
-        for (var b = 0; b < game.bullets.length; b++) {
+        for (let b = 0; b < game.bullets.length; b++) {
             const bullet = game.bullets[b]
 
             if (Math.sqrt(Math.pow(bullet.sx - bullet.x) + Math.pow(bullet.sy - bullet.y)) > GAME_ARGS.BULLET_RANGE || bullet.lifetime > GAME_ARGS.BULLET_LIFETIME) {
@@ -892,7 +895,7 @@ function gameTick() {
 
             bullet.lifetime++
 
-            for (p = 0; p < players.length; p++) {
+            for (let p = 0; p < players.length; p++) {
                 const player = game.players[players[p]];
 
                 if (Math.abs(player.position.x - bullet.x) < GAME_ARGS.PLAYER_HITBOX && Math.abs(player.position.y - bullet.y) < GAME_ARGS.PLAYER_HITBOX && bullet.owner != players[p]) {
@@ -906,7 +909,7 @@ function gameTick() {
             }
         }
 
-        for (var w = 0; w < game.powerups.length; w++) {
+        for (let w = 0; w < game.powerups.length; w++) {
             const powerup = game.powerups[w]
 
             for (p = 0; p < players.length; p++) {
@@ -931,7 +934,7 @@ function gameTick() {
             }
         }
 
-        for (var m = 0; m < GAME_ARGS.POWERUP_POSSIBILITY.length; m++) {
+        for (let m = 0; m < GAME_ARGS.POWERUP_POSSIBILITY.length; m++) {
             for (p = 0; p < players.length; p++) {
                 const player = game.players[players[p]];
 
@@ -981,7 +984,7 @@ function gameTick() {
         io.to(keys[i]).emit("game", sterilizeGame(game))
     }
 
-    for (i = 0; i < Object.keys(anticheat.chat).length; i++) {
+    for (let i = 0; i < Object.keys(anticheat.chat).length; i++) {
         anticheat.chat[Object.keys(anticheat.chat)] -= 1;
 
         if (anticheat.chat[Object.keys(anticheat.chat)] < 0) anticheat.chat[Object.keys(anticheat.chat)] = 0;
@@ -989,7 +992,7 @@ function gameTick() {
 }
 
 console.log("Creating public lobbies...")
-for (var _gameToCreate = 0; _gameToCreate < GAME_ARGS.PUBLIC_LOBBIES; _gameToCreate++) {
+for (let _gameToCreate = 0; _gameToCreate < GAME_ARGS.PUBLIC_LOBBIES; _gameToCreate++) {
     const lobbyID = makeid(12)
     games["public_" + lobbyID] = getGameObject();
     console.log(clc.magenta.italic("[PUBLIC LOBBY] ") + "Created public lobby " + lobbyID + " (" + _gameToCreate + ")")
@@ -1007,8 +1010,11 @@ if (DEBUG) {
     rl.on("line", (input) => {
         const command = input.split(" ")[0]
         const args = input.split(" ").slice(1)
-    
+ 
         switch (command) {
+            case "echo":
+                console.log(args.join())
+                break;
             case "stop":
                 console.log("Closing down listeners")
                 rl.close()
@@ -1020,6 +1026,7 @@ if (DEBUG) {
                 games = {};
                 console.log("Shutdown process completed.")
                 process.exit()
+                break;
             default:
                 console.error("Not a valid command. Commands: [stop]")
         }

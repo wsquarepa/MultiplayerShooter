@@ -10,9 +10,9 @@
 
     const BACKGROUND_AUDIO = [new Audio('audio_game_0.mp3'), new Audio('audio_game_1.mp3'), new Audio('audio_game_2.mp3'), new Audio('audio_game_3.mp3')]
     const SHOOT_SFX = new Audio('shoot.mp3')
-    var audioIndex = 0;
+    let audioIndex = 0;
 
-    var error = ""
+    let error = ""
 
     const GAME_ARGS = {
         MOVEMENT_SPEED: 20 / 10
@@ -20,21 +20,21 @@
 
     const BANNED_KEYS = ["Shift", "Meta", "Alt", "Control", "Tab", "CapsLock", "PageUp", "PageDown", "Home", "End", "Delete"]
 
-    var game = null;
-    var canShoot = true;
+    let game = null;
+    let canShoot = true;
 
-    var chat = [];
-    var currentlyTyping = ""
-    var chatFocused = false
+    let chat = [];
+    let currentlyTyping = ""
+    let chatFocused = false
 
-    var lastPos = {
+    let lastPos = {
         x: 0,
         y: 0
     }
 
-    var mousePos;
+    let mousePos;
 
-    var keysDown = [];
+    let keysDown = [];
 
     function getCookie(cname) {
         let name = cname + "=";
@@ -85,7 +85,7 @@
         }
 
         const players = Object.keys(game.players)
-        for (var p = 0; p < players.length; p++) {
+        for (let p = 0; p < players.length; p++) {
             const player = game.players[players[p]];
 
             if (player == null) continue;
@@ -107,7 +107,7 @@
             }
         }
 
-        for (var b = 0; b < game.bullets.length; b++) {
+        for (let b = 0; b < game.bullets.length; b++) {
             const bullet = game.bullets[b]
 
             bullet.x += bullet.dx / 10
@@ -145,7 +145,7 @@
         const INTERVAL = 100
 
         ctx.strokeStyle = "#656d7d"
-        for (var l = -2000; l < 2000; l++) {
+        for (let l = -2000; l < 2000; l++) {
             if (l % INTERVAL != 0) continue;
 
             ctx.beginPath()
@@ -206,7 +206,7 @@
             ctx.fillText(player.username, player.position.x, player.position.y - 25)
         }
 
-        for (var b = 0; b < game.bullets.length; b++) {
+        for (let b = 0; b < game.bullets.length; b++) {
             const bullet = game.bullets[b]
 
             ctx.beginPath()
@@ -216,7 +216,7 @@
 
         ctx.fillStyle = "#B9E5E1"
 
-        for (var w = 0; w < game.powerups.length; w++) {
+        for (let w = 0; w < game.powerups.length; w++) {
             const powerup = game.powerups[w]
 
             ctx.beginPath()
@@ -240,7 +240,7 @@
 
         ctx.fillStyle = "#FFFFFF"
 
-        for (var chatIteration = 0; chatIteration < chat.length; chatIteration++) {
+        for (let chatIteration = 0; chatIteration < chat.length; chatIteration++) {
             ctx.fillText(chat[chatIteration], 10, c.height - 20 - ((chat.length - chatIteration) * 15))
         }
 
@@ -401,7 +401,7 @@
     requestAnimationFrame(frame)
     setInterval(tick, 10)
 
-    for (var music = 0; music < BACKGROUND_AUDIO.length; music++) {
+    for (let music = 0; music < BACKGROUND_AUDIO.length; music++) {
         BACKGROUND_AUDIO[music].volume = 0.2
         
         BACKGROUND_AUDIO[music].addEventListener("ended", () => {
