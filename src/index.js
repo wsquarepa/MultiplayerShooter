@@ -990,10 +990,10 @@ function gameTick() {
         io.to(keys[i]).emit("game", sterilizeGame(game))
     }
 
-    for (let i = 0; i < Object.keys(anticheat.chat).length; i++) {
-        anticheat.chat[Object.keys(anticheat.chat)] -= 1;
+    for (const element of Object.keys(anticheat.chat)) {
+        anticheat.chat[element] -= 1;
 
-        if (anticheat.chat[Object.keys(anticheat.chat)] < 0) anticheat.chat[Object.keys(anticheat.chat)] = 0;
+        if (anticheat.chat[element] < 0) anticheat.chat[element] = 0;
     }
 }
 
