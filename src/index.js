@@ -433,7 +433,7 @@ app.post("/login", (req, res) => {
 })
 
 app.post("/register", (req, res) => {
-    const username = req.body.username;
+    const username = req.body.username.trim();
     const password = req.body.password;
 
     if (username == null || password == null) {
@@ -457,6 +457,12 @@ app.post("/register", (req, res) => {
     if (password.length < 8) {
         res.status(400)
         res.send("Weak password, choose another. (Needs to be more than 8 characters long)")
+        return;
+    }
+
+    if (/\W/gm.test(username)) {
+        res.status(400)
+        res.send("Username contains invalid characters")
         return;
     }
 
@@ -527,11 +533,11 @@ app.get("/api/publicGames", (req, res) => {
     refreshLimiter.consume(req.ip).then(() => {
         let gameList = [];
     
-        for (let i = 0; i < Object.keys(games).length; i++) {
-            if (Object.keys(games)[i].startsWith("public_")) {
+        for (const element of Object.keys(games)) {
+            if (element.startsWith("public_")) {
                 gameList.push({
-                    id: Object.keys(games)[i],
-                    players: Object.keys(games[Object.keys(games)[i]].players).length
+                    id: element,
+                    players: Object.keys(games[element].players).length
                 })
             }
         }
@@ -595,12 +601,12 @@ io.on("connection", (socket) => {
             socket.data.auth = checkAuth(msg);
 
             io.fetchSockets().then(sockets => {
-                for (let i = 0; i < sockets.length; i++) {
-                    if (sockets[i].data.auth == socket.data.auth && sockets[i].id != socket.id) {
+                for (const element of sockets) {
+                    if (element.data.auth == socket.data.auth && element.id != socket.id) {
                         console.warn("User " + socket.data.auth + " logged on from another location!")
 
-                        sockets[i].emit("error", "Logged on from another location")
-                        sockets[i].disconnect(true)
+                        element.emit("error", "Logged on from another location")
+                        element.disconnect(true)
                     }
                 }
             })
