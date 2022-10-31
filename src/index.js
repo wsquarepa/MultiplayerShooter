@@ -55,6 +55,8 @@ const GAME_ARGS = {
 
 const DEBUG = process.env.DEBUG || true
 
+const INIT_ARGS = process.argv.slice(2);
+
 const loginLimiter = new RateLimiterMemory({
     points: 10,
     duration: 60,
@@ -1048,4 +1050,8 @@ if (DEBUG) {
                 console.error("Not a valid command. Commands: [stop]")
         }
     })
+}
+
+if (INIT_ARGS.includes("CI")) {
+    process.exit(0);
 }
