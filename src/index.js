@@ -641,8 +641,8 @@ io.on("connection", (socket) => {
             health: 100,
             buffs: {},
             position: {
-                x: 0,
-                y: 0
+                x: rand(-GAME_ARGS.WORLDBORDER + 10, GAME_ARGS.WORLDBORDER - 10),
+                y: rand(-GAME_ARGS.WORLDBORDER + 10, GAME_ARGS.WORLDBORDER - 10)
             },
             movement: {
                 up: false,
