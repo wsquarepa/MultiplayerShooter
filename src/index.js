@@ -19,6 +19,9 @@ const PORT = parseInt(process.env.PORT) || 8080
 const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS) || 8
 const JWT_KEY = process.env.JWT_KEY || "secret"
 
+const DOMAIN_LOCK = JSON.parse(process.env.DOMAIN_LOCK || "[\"localhost\"]")
+const DOMAIN_LOCK_REDIRECT = process.env.DOMAIN_LOCK_REDIRECT || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
 const GAME_ARGS = {
     PUBLIC_LOBBIES: 5,
     MOVEMENT_SPEED: 20,
@@ -363,8 +366,8 @@ app.get("/game", (req, res) => {
 
 app.get("/index.js", (req, res) => {
     res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/index.js").toString(), {
-        domainLock: ["localhost", "178.128.178.122"],
-        domainLockRedirectUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        domainLock: DOMAIN_LOCK,
+        domainLockRedirectUrl: DOMAIN_LOCK_REDIRECT
     }).getObfuscatedCode())
 })
 
@@ -375,8 +378,8 @@ app.get("/game.js", (req, res) => {
     }
 
     res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/game.js", {
-        domainLock: ["localhost", "178.128.178.122"],
-        domainLockRedirectUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        domainLock: DOMAIN_LOCK,
+        domainLockRedirectUrl: DOMAIN_LOCK_REDIRECT
     }).toString()).getObfuscatedCode())
 })
 
