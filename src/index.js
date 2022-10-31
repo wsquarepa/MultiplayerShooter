@@ -190,7 +190,6 @@ function createAuthToken(username, ip, expiresIn = "1d") {
 
 /**
  * Checks authentication for administrator portal
- * WARNING! If you don't set the environment variable "ADMIN_USERNAME", it will accept connections from everyone!
  * @param {Express.Request} req Request
  * @returns Wether or not they are permitted to access the portal.
  */
@@ -380,13 +379,11 @@ app.get("/game.js", (req, res) => {
 })
 
 app.get("/login", (req, res) => {
-    res.status(405)
-    res.send("Invalid usage")
+    res.redirect("/")
 })
 
 app.get("/register", (req, res) => {
-    res.status(405)
-    res.send("Invalid usage")
+    res.redirect("/")
 })
 
 app.post("/login", (req, res) => {
