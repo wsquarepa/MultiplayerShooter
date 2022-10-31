@@ -361,7 +361,10 @@ app.get("/game", (req, res) => {
 })
 
 app.get("/index.js", (req, res) => {
-    res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/index.js").toString()).getObfuscatedCode())
+    res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/index.js").toString(), {
+        domainLock: ["localhost", "178.128.178.122"],
+        domainLockRedirectUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    }).getObfuscatedCode())
 })
 
 app.get("/game.js", (req, res) => {
@@ -370,7 +373,10 @@ app.get("/game.js", (req, res) => {
         return;
     }
 
-    res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/game.js").toString()).getObfuscatedCode())
+    res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/game.js", {
+        domainLock: ["localhost", "178.128.178.122"],
+        domainLockRedirectUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    }).toString()).getObfuscatedCode())
 })
 
 app.get("/login", (req, res) => {
