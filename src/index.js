@@ -44,7 +44,9 @@ const GAME_ARGS = {
         MAX_VLS: 100,
         DISPLAY_EVERY: 8,
         MAX_MOUSE_DISTANCE: 500,
-        BASE_CHAT_HEAT: 4
+        BASE_CHAT_HEAT: 4,
+        MAX_CHAT_HEAT: 250,
+        CHAT_HEAT_DECLINE: 0.2
     }
 }
 
@@ -802,7 +804,7 @@ io.on("connection", (socket) => {
 
         anticheat.chat[socket.data.auth] += GAME_ARGS.ANTICHEAT.BASE_CHAT_HEAT
 
-        if (anticheat.chat[socket.data.auth] > 100) {
+        if (anticheat.chat[socket.data.auth] > GAME_ARGS.ANTICHEAT.MAX_CHAT_HEAT) {
             socket.emit("chatmessage", "> You are chatting too fast.")
             return;
         }
@@ -997,7 +999,7 @@ function gameTick() {
     }
 
     for (const element of Object.keys(anticheat.chat)) {
-        anticheat.chat[element] -= 0.1;
+        anticheat.chat[element] -= GAME_ARGS.ANTICHEAT.CHAT_HEAT_DECLINE;
 
         if (anticheat.chat[element] < 0) anticheat.chat[element] = 0;
     }
