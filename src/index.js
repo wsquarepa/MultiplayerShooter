@@ -708,7 +708,7 @@ io.on("connection", (socket) => {
             return;
         }
 
-        const enable = packet.enable == 1
+        const enable = packet.enable == "1"
 
         switch (packet.direction) {
             case "up":
@@ -811,10 +811,17 @@ io.on("connection", (socket) => {
 
         if (anticheat.chat[socket.data.auth] > GAME_ARGS.ANTICHEAT.MAX_CHAT_HEAT) {
             socket.emit("chatmessage", "> You are chatting too fast.")
+
+            console.warn("[CHAT] Message blocked | Room: " + socket.data.game + " | User: " + socket.data.auth + " | Message (trimmed): " + msg.trim().substring(0, 64) + 
+            " | Heat: " + Math.floor(anticheat.chat[socket.data.auth]))
+
             return;
         }
 
         io.to(socket.data.game).emit("chatmessage", socket.data.auth + ": " + msg.trim().substring(0, 64))
+
+        console.log(clc.blackBright("[CHAT] Message sent | Room: " + socket.data.game + " | User: " + socket.data.auth + " | Message (trimmed): " + msg.trim().substring(0, 64) + 
+        " | Heat: " + Math.floor(anticheat.chat[socket.data.auth])))
     })
     
     socket.on("disconnect", (reason) => {
@@ -1012,7 +1019,7 @@ function gameTick() {
 
 console.log("Creating public lobbies...")
 for (let _gameToCreate = 0; _gameToCreate < GAME_ARGS.PUBLIC_LOBBIES; _gameToCreate++) {
-    const lobbyID = makeid(12)
+    const lobbyID = makeid(16)
     games["public_" + lobbyID] = getGameObject();
     console.log(clc.magenta.italic("[PUBLIC LOBBY] ") + "Created public lobby " + lobbyID + " (" + _gameToCreate + ")")
 }
