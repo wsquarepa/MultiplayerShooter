@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt')
 const obfuscator = require('javascript-obfuscator');
 const clc = require('cli-color')
 const readline = require("readline");
+const compression = require('compression')
 const { RateLimiterMemory } = require('rate-limiter-flexible')
 const { createServer } = require("http");
 const { Server } = require("socket.io");
@@ -382,6 +383,8 @@ app.set('views', 'src/public/html');
 app.use(cookieParser())
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(compression())
 
 app.use(express.static("src/public/css"))
 
