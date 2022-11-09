@@ -38,11 +38,6 @@
 
     let keysDown = [];
 
-    const TIMER_MOD_CHECK_INTERVAL = 250
-    const TIMER_MOD_CHECK_THRESHOLD = 8
-
-    let lastTimerModCheck = -1;
-
     function getCookie(cname) {
         let name = cname + "=";
         let decodedCookie = decodeURIComponent(document.cookie);
@@ -435,18 +430,4 @@
     })
 
     document.body.appendChild(c)
-
-    setInterval(() => {
-        if (lastTimerModCheck > 0) {
-            const dateDiff = Date.now() - lastTimerModCheck
-            if (dateDiff > TIMER_MOD_CHECK_INTERVAL - TIMER_MOD_CHECK_THRESHOLD && dateDiff < TIMER_MOD_CHECK_INTERVAL + TIMER_MOD_CHECK_THRESHOLD) {
-                //No timer modification, ignore
-            } else {
-                error = "Game Timer Modification"
-                socket.close()
-            }
-        }
-
-        lastTimerModCheck = Date.now()
-    }, TIMER_MOD_CHECK_INTERVAL)
 })()
