@@ -402,7 +402,11 @@ app.get("/game", (req, res) => {
 })
 
 app.get("/index.js", (req, res) => {
-    res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/index.js").toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode())
+    if (DEBUG) {
+        res.send(fs.readFileSync("src/public/javascript/index.js").toString())
+    } else {
+        res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/index.js").toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode())
+    }
 })
 
 app.get("/game.js", (req, res) => {
@@ -411,7 +415,11 @@ app.get("/game.js", (req, res) => {
         return;
     }
 
-    res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/game.js").toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode())
+    if (DEBUG) {
+        res.send(fs.readFileSync("src/public/javascript/game.js").toString())
+    } else {
+        res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/game.js").toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode())
+    }
 })
 
 app.get("/login", (req, res) => {
