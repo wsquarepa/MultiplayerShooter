@@ -1066,6 +1066,8 @@ console.log("Created " + GAME_ARGS.PUBLIC_LOBBIES + " public lobbies")
 setInterval(gameTick, 100)
 
 if (DEBUG) {
+    console.warn("Debug mode is enabled!")
+    
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
