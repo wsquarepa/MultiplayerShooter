@@ -53,7 +53,7 @@ const GAME_ARGS = {
     }
 }
 
-const DEBUG = process.env.DEBUG || true
+const DEBUG = process.env.DEBUG == "1" || true
 
 const INIT_ARGS = process.argv.slice(2);
 
@@ -1067,7 +1067,7 @@ setInterval(gameTick, 100)
 
 if (DEBUG) {
     console.warn("Debug mode is enabled!")
-    
+
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
