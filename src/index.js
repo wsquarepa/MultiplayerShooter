@@ -53,7 +53,7 @@ const GAME_ARGS = {
     }
 }
 
-const DEBUG = (process.env.DEBUG == "1") || true
+const DEBUG = process.env.DEBUG == null? true : (process.env.DEBUG == "1")
 
 const INIT_ARGS = process.argv.slice(2);
 
