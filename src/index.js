@@ -57,6 +57,41 @@ const DEBUG = process.env.DEBUG || true
 
 const INIT_ARGS = process.argv.slice(2);
 
+const OBFUSCATOR_SETTINGS = {
+    compact: true,
+    controlFlowFlattening: true,
+    controlFlowFlatteningThreshold: 0.75,
+    deadCodeInjection: true,
+    deadCodeInjectionThreshold: 0.4,
+    debugProtection: false,
+    debugProtectionInterval: 0,
+    disableConsoleOutput: true,
+    domainLock: DOMAIN_LOCK, //Lock to domain
+    domainLockRedirectUrl: DOMAIN_LOCK_REDIRECT, //Redirect to whatever its set to
+    identifierNamesGenerator: 'hexadecimal',
+    log: false,
+    numbersToExpressions: true,
+    renameGlobals: false,
+    selfDefending: true,
+    simplify: true,
+    splitStrings: true,
+    splitStringsChunkLength: 10,
+    stringArray: true,
+    stringArrayCallsTransform: true,
+    stringArrayCallsTransformThreshold: 0.75,
+    stringArrayEncoding: ['base64'],
+    stringArrayIndexShift: true,
+    stringArrayRotate: true,
+    stringArrayShuffle: true,
+    stringArrayWrappersCount: 2,
+    stringArrayWrappersChainedCalls: true,
+    stringArrayWrappersParametersMaxCount: 4,
+    stringArrayWrappersType: 'function',
+    stringArrayThreshold: 0.75,
+    transformObjectKeys: true,
+    unicodeEscapeSequence: false
+}
+
 const loginLimiter = new RateLimiterMemory({
     points: 10,
     duration: 60,
@@ -185,7 +220,7 @@ function checkAuth(token, ip = null) {
  * @returns A signed JWT
  */
 function createAuthToken(username, ip, expiresIn = "1d") {
-    const randomID = makeid(50)
+    const randomID = makeid(64)
 
     userSessions[randomID] = {
         username: username,
@@ -367,10 +402,7 @@ app.get("/game", (req, res) => {
 })
 
 app.get("/index.js", (req, res) => {
-    res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/index.js").toString(), {
-        domainLock: DOMAIN_LOCK,
-        domainLockRedirectUrl: DOMAIN_LOCK_REDIRECT
-    }).getObfuscatedCode())
+    res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/index.js").toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode())
 })
 
 app.get("/game.js", (req, res) => {
@@ -379,10 +411,7 @@ app.get("/game.js", (req, res) => {
         return;
     }
 
-    res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/game.js", {
-        domainLock: DOMAIN_LOCK,
-        domainLockRedirectUrl: DOMAIN_LOCK_REDIRECT
-    }).toString()).getObfuscatedCode())
+    res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/game.js").toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode())
 })
 
 app.get("/login", (req, res) => {
@@ -692,19 +721,19 @@ io.on("connection", (socket) => {
         try {
             JSON.parse(JSON.stringify(msg))
         } catch {
-            socket.emit("error", "Invalid Movement Packet")
+            violate(socket.id, "Packets")
             return;
         }
 
         const packet = JSON.parse(JSON.stringify(msg))
 
         if (packet.direction == null || packet.enable == null) {
-            socket.emit("error", "Invalid Movement Packet")
+            violate(socket.id, "Packets")
             return;
         }
 
         if (packet.enable != "0" && packet.enable != "1") {
-            socket.emit("error", "Invalid Movement Packet")
+            violate(socket.id, "Packets")
             return;
         }
 
@@ -724,6 +753,7 @@ io.on("connection", (socket) => {
                 games[socket.data.game].players[socket.id].movement.left = enable
                 break;
             default:
+                violate(socket.id, "Packets")
                 socket.emit("error", "Invalid Movement Packet")
         }
     })
@@ -742,14 +772,14 @@ io.on("connection", (socket) => {
         try {
             JSON.parse(JSON.stringify(msg))
         } catch {
-            socket.emit("error", "Invalid Movement Packet")
+            violate(socket.id, "Packets")
             return;
         }
 
         const packet = JSON.parse(JSON.stringify(msg))
 
         if (packet.x == null || packet.y == null || typeof packet.x != "number" || typeof packet.y != "number" || isNaN(packet.x) || isNaN(packet.y)) {
-            socket.emit("error", "Invalid Movement Packet")
+            violate(socket.id, "Packets")
             return;
         }
 
@@ -785,7 +815,7 @@ io.on("connection", (socket) => {
         }
 
         if (msg != "0" && msg != "1") {
-            socket.emit("error", "Invalid Firing Packet")
+            violate(socket.id, "Packets")
             return;
         }
 

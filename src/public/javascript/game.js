@@ -23,6 +23,8 @@
     let game = null;
     let canShoot = true;
 
+    const MAX_CHAT_LENGTH = 10;
+
     let chat = [];
     let currentlyTyping = ""
     let chatFocused = false
@@ -70,7 +72,7 @@
     socket.on("chatmessage", (msg) => {
         chat.push(msg)
 
-        if (chat.length > 10) {
+        if (chat.length > MAX_CHAT_LENGTH) {
             chat.shift()
         }
     })
@@ -232,9 +234,9 @@
         ctx.font = "15px Comfortaa";
 
         if (chatFocused) {
-            ctx.globalAlpha = 0.25
+            ctx.globalAlpha = 0.4
             ctx.fillStyle = "#000000"
-            ctx.fillRect(0, 0, c.width, c.height)
+            ctx.fillRect(0, c.height - (MAX_CHAT_LENGTH * 15) - 35, c.width, (MAX_CHAT_LENGTH * 15) + 35)
             ctx.globalAlpha = 1
         }
 
@@ -390,6 +392,11 @@
             x: e.x,
             y: e.y
         }
+    })
+
+    window.addEventListener("resize", (e) => {
+        c.width = document.body.clientWidth
+        c.height = document.body.clientHeight
     })
 
     socket.emit("authentication", getCookie("token"))
