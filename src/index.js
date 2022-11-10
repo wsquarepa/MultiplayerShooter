@@ -721,6 +721,7 @@ io.on("connection", (socket) => {
             }    
         }
         
+        socket.data.lastPing = Date.now()
         callback();
     })
 
