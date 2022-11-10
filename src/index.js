@@ -48,7 +48,8 @@ const GAME_ARGS = {
         MAX_VLS: 100,
         DISPLAY_EVERY: 8,
         MAX_MOUSE_DISTANCE: 500,
-        MIN_TIME_BETWEEN_PING: 900, //Client is 1000
+        MIN_TIME_BETWEEN_PING: 4900, //Client is 5000
+        PINGSPAM_VLS: 8,
         BASE_CHAT_HEAT: 4,
         MAX_CHAT_HEAT: 250,
         CHAT_HEAT_DECLINE: 0.2
@@ -323,10 +324,10 @@ function createACProfile(id) {
     return anticheat.players[id]
 }
 
-function violate(id, checkName, disconnect = true) {
+function violate(id, checkName, times = 1, disconnect = true) {
     if (anticheat.players[id]) {
         if (anticheat.players[id].checkVls[checkName]) {
-            anticheat.players[id].checkVls[checkName]++;
+            anticheat.players[id].checkVls[checkName] += times;
 
             if (anticheat.players[id].checkVls[checkName] > GAME_ARGS.ANTICHEAT.MAX_VLS && disconnect) {
                 io.fetchSockets().then(sockets => {
@@ -340,12 +341,12 @@ function violate(id, checkName, disconnect = true) {
                 })
             }
         } else {
-            anticheat.players[id].checkVls[checkName] = 1
+            anticheat.players[id].checkVls[checkName] += times
         }
     } else {
         createACProfile(id)
 
-        anticheat.players[id].checkVls[checkName] = 1
+        anticheat.players[id].checkVls[checkName] += times
     }
 
     if (anticheat.players[id].checkVls[checkName] % GAME_ARGS.ANTICHEAT.DISPLAY_EVERY == 0) {
@@ -716,9 +717,9 @@ io.on("connection", (socket) => {
     socket.on("ping", (callback) => {
         if (socket.data.lastPing != null) {
             if ((Date.now() - socket.data.lastPing) < GAME_ARGS.ANTICHEAT.MIN_TIME_BETWEEN_PING) {
-                violate(socket.id, "Packets")
+                violate(socket.id, "Packets", GAME_ARGS.ANTICHEAT.PINGSPAM_VLS)
                 return;
-            }    
+            }
         }
         
         socket.data.lastPing = Date.now()
@@ -1076,7 +1077,7 @@ console.log("Created " + GAME_ARGS.PUBLIC_LOBBIES + " public lobbies")
 setInterval(gameTick, 100)
 
 if (DEBUG) {
-    console.warn("Debug mode is enabled!")
+    console.warn("Debug mode is enabled! Disable it by adding \"DEBUG=0\" in \".env\".")
 
     const rl = readline.createInterface({
         input: process.stdin,

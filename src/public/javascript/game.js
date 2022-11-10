@@ -18,7 +18,7 @@
         MOVEMENT_SPEED: 20 / 10
     }
 
-    const BANNED_KEYS = ["Shift", "Meta", "Alt", "Control", "Tab", "CapsLock", "PageUp", "PageDown", "Home", "End", "Delete"]
+    const BANNED_KEYS = ["Shift", "Meta", "Alt", "Control", "Tab", "CapsLock", "PageUp", "PageDown", "Home", "End", "Delete", "Dead"]
 
     let game = null;
     let canShoot = true;
