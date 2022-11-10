@@ -328,25 +328,25 @@ function violate(id, checkName, times = 1, disconnect = true) {
     if (anticheat.players[id]) {
         if (anticheat.players[id].checkVls[checkName]) {
             anticheat.players[id].checkVls[checkName] += times;
-
-            if (anticheat.players[id].checkVls[checkName] > GAME_ARGS.ANTICHEAT.MAX_VLS && disconnect) {
-                io.fetchSockets().then(sockets => {
-                    const socket = sockets.find(x => x.id == id)
-                    if (socket) {
-                        console.warn(clc.bold.red("[ANTICHEAT]") + " " + clc.cyan(id) + clc.white(" was disconnected due to ANTICHEAT INFRACTION"))
-
-                        socket.emit("error", "Anticheat Disconnect")
-                        socket.disconnect(true)
-                    }
-                })
-            }
         } else {
-            anticheat.players[id].checkVls[checkName] += times
+            anticheat.players[id].checkVls[checkName] = times
         }
     } else {
         createACProfile(id)
 
         anticheat.players[id].checkVls[checkName] += times
+    }
+
+    if (anticheat.players[id].checkVls[checkName] > GAME_ARGS.ANTICHEAT.MAX_VLS && disconnect) {
+        io.fetchSockets().then(sockets => {
+            const socket = sockets.find(x => x.id == id)
+            if (socket) {
+                console.warn(clc.bold.red("[ANTICHEAT]") + " " + clc.cyan(id) + clc.white(" was disconnected due to ANTICHEAT INFRACTION"))
+
+                socket.emit("error", "Anticheat Disconnect")
+                socket.disconnect(true)
+            }
+        })
     }
 
     if (anticheat.players[id].checkVls[checkName] % GAME_ARGS.ANTICHEAT.DISPLAY_EVERY == 0) {
