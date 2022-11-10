@@ -38,6 +38,23 @@
 
     let keysDown = [];
 
+    let analytics = {
+        ping: -1,
+        fps: -1,
+        ppsdown: -1,
+        ppsup: -1,
+        netup: -1,
+        netdown: -1
+    }
+
+    let analysis = {
+        frames: 0,
+        ppsdown: 0,
+        ppsup: 0,
+        netup: 0,
+        netdown: 0
+    }
+
     function getCookie(cname) {
         let name = cname + "=";
         let decodedCookie = decodeURIComponent(document.cookie);
@@ -54,12 +71,20 @@
         return "";
     }
 
-    socket.on("ack", (msg) => {
-        switch (msg) {
-            case "0":
-                break;
-        }
-    })
+    // socket.emit inject :d
+
+    let _oldEmit = socket.emit
+
+    socket.emit = function() {
+        let args = Array.from(arguments); // ES5
+
+        analysis.ppsup++;
+        analysis.netup += JSON.stringify(args).length;
+        
+        _oldEmit.apply(socket, args);
+    }
+
+    // =====================
 
     socket.on("game", (msg) => {
         game = JSON.parse(JSON.stringify(msg))
@@ -67,6 +92,9 @@
         if (Object.keys(game.players).includes(socket.id)) {
             lastPos = JSON.parse(JSON.stringify(game.players[socket.id].position))
         }
+
+        analysis.ppsdown++;
+        analysis.netdown += JSON.stringify(msg).length
     })
 
     socket.on("chatmessage", (msg) => {
@@ -75,10 +103,16 @@
         if (chat.length > MAX_CHAT_LENGTH) {
             chat.shift()
         }
+
+        analysis.ppsdown++;
+        analysis.netdown += JSON.stringify(msg).length
     })
 
     socket.on("error", (msg) => {
         error = msg
+
+        analysis.ppsdown++;
+        analysis.netdown += JSON.stringify(msg).length
     })
     
     function tick() {
@@ -118,6 +152,8 @@
     }
 
     function frame() {
+        analysis.frames++;
+
         if (game == null) {
             requestAnimationFrame(frame)
             return;
@@ -229,9 +265,16 @@
         ctx.fillStyle = "#FFFFFF"
 
         ctx.resetTransform()
-        ctx.textAlign = "left"
 
+        ctx.textAlign = "right"
         ctx.font = "15px Comfortaa";
+
+        ctx.fillText(analytics.ping + " ms", c.width - 5, 20)
+        ctx.fillText("FPS: " + analytics.fps, c.width - 5, 40)
+        ctx.fillText("PPS: " + analytics.ppsup + " ↑ /" + analytics.ppsdown + " ↓", c.width - 5, 60)
+        ctx.fillText("NET: " + analytics.netup + " kb/s ↑ / " + analytics.netdown + " kb/s ↓", c.width - 5, 80)
+
+        ctx.textAlign = "left"
 
         if (chatFocused) {
             ctx.globalAlpha = 0.4
@@ -428,6 +471,35 @@
     document.body.addEventListener("mousedown", () => {
         BACKGROUND_AUDIO[audioIndex].play()
     })
+
+    setInterval(() => {
+        const start = Date.now();
+      
+        socket.emit("ping", () => {
+            analytics.ping = Date.now() - start;
+        });
+        
+        analysis.ppsdown++;
+        analysis.netdown += 8 + (start.toString().length)
+        analysis.ppsup++;
+        analysis.netup += 8 + (start.toString().length)
+    }, 5000);
+
+    setInterval(() => {
+        analytics.fps = analysis.frames
+        analytics.ppsdown = analysis.ppsdown
+        analytics.ppsup = analysis.ppsup
+        analytics.netdown = (analysis.netdown / 1000).toFixed(2)
+        analytics.netup = (analysis.netup / 1000).toFixed(2)
+        
+        analysis = {
+            frames: 0,
+            ppsdown: 0,
+            ppsup: 0,
+            netup: 0,
+            netdown: 0
+        }
+    }, 1000)
 
     document.body.appendChild(c)
 })()

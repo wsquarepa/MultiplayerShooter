@@ -710,8 +710,6 @@ io.on("connection", (socket) => {
         createACProfile(socket.id)
 
         console.log("User Game Join | Game: " + socket.data.game + " | ID: " + socket.id)
-
-        socket.emit("ack", "0")
     })
 
     socket.on("ping", (callback) => {
