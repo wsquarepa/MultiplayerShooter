@@ -48,6 +48,7 @@ const GAME_ARGS = {
         MAX_VLS: 100,
         DISPLAY_EVERY: 8,
         MAX_MOUSE_DISTANCE: 500,
+        MIN_TIME_BETWEEN_PING: 900, //Client is 1000
         BASE_CHAT_HEAT: 4,
         MAX_CHAT_HEAT: 250,
         CHAT_HEAT_DECLINE: 0.2
@@ -713,6 +714,13 @@ io.on("connection", (socket) => {
     })
 
     socket.on("ping", (callback) => {
+        if (socket.data.lastPing != null) {
+            if (Date.now() - socket.data.lastPing < GAME_ARGS.ANTICHEAT.MIN_TIME_BETWEEN_PING) {
+                violate(socket.id, "Packets")
+                return;
+            }    
+        }
+        
         callback();
     })
 
