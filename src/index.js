@@ -715,7 +715,7 @@ io.on("connection", (socket) => {
 
     socket.on("ping", (callback) => {
         if (socket.data.lastPing != null) {
-            if (Date.now() - socket.data.lastPing < GAME_ARGS.ANTICHEAT.MIN_TIME_BETWEEN_PING) {
+            if ((Date.now() - socket.data.lastPing) < GAME_ARGS.ANTICHEAT.MIN_TIME_BETWEEN_PING) {
                 violate(socket.id, "Packets")
                 return;
             }    
