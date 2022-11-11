@@ -232,8 +232,7 @@
                         logoutButton.style.float = "right"
 
                         logoutButton.addEventListener("click", () => {
-                            deleteAllCookies()
-                            location.reload()
+                            location = "/logout"
                         })
 
                         block.appendChild(welcomeBanner)

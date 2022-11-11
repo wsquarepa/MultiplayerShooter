@@ -206,6 +206,11 @@ function checkAuth(token, ip = null) {
         return null;
     }
 
+    if (userSessions[decodedtoken.session].expiry < Date.now()) {
+        delete userSessions[decodedtoken.session];
+        return null;
+    }
+
     if (ip != null) {
         if (userSessions[decodedtoken.session].ip != ip) {
             return null;
@@ -222,12 +227,13 @@ function checkAuth(token, ip = null) {
  * @param {String} expiresIn Expiry time, defualt to 1d
  * @returns A signed JWT
  */
-function createAuthToken(username, ip, expiresIn = "1d") {
+function createAuthToken(username, ip, expiresIn = 60 * 60 * 24) {
     const randomID = makeid(64)
 
     userSessions[randomID] = {
         username: username,
-        ip: ip
+        ip: ip,
+        expiry: Date.now() + (expiresIn * 1000)
     }
 
     return jwt.sign({session: randomID}, JWT_KEY, {expiresIn: expiresIn})
@@ -432,6 +438,16 @@ app.get("/login", (req, res) => {
 })
 
 app.get("/register", (req, res) => {
+    res.redirect("/")
+})
+
+app.get("/logout", (req, res) => {
+    if (!req.cookies.token || checkAuth(req.cookies.token) == null) {
+        res.redirect("/")
+        return;
+    }
+
+    res.cookie("token", "", { maxAge: 0 })
     res.redirect("/")
 })
 
