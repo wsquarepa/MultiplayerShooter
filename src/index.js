@@ -1056,7 +1056,7 @@ function gameTick() {
             }
         }
 
-        io.to(keys[i]).emit("game", sterilizeGame(game))
+        io.volatile.to(keys[i]).emit("game", sterilizeGame(game))
     }
 
     for (const element of Object.keys(anticheat.chat)) {

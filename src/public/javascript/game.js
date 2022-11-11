@@ -2,7 +2,9 @@
     const c = document.createElement("canvas")
     const ctx = c.getContext("2d")
 
-    const socket = io();
+    const socket = io({
+        reconnection: false
+    });
     
     const params = new Proxy(new URLSearchParams(window.location.search), {
         get: (searchParams, prop) => searchParams.get(prop),
