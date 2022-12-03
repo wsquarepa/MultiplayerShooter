@@ -49,7 +49,8 @@ const GAME_ARGS = {
         DISPLAY_EVERY: 8,
         MAX_MOUSE_DISTANCE: 500,
         MIN_TIME_BETWEEN_PING: 4900, //Client is 5000
-        PINGSPAM_VLS: 8,
+        PINGSPAM_VLS: 25,
+        MAX_PPS: 100,
         BASE_CHAT_HEAT: 4,
         MAX_CHAT_HEAT: 250,
         CHAT_HEAT_DECLINE: 0.2
@@ -324,7 +325,11 @@ function sterilizeGame(game) {
 function createACProfile(id) {
     anticheat.players[id] = {
         checkVls: {},
-        data: {}
+        data: {},
+        packetSpam: {
+            packets: 1,
+            nextReset: Date.now() + 1000
+        }
     }
 
     return anticheat.players[id]
@@ -442,7 +447,7 @@ app.get("/game", (req, res) => {
 })
 
 app.get("/index.js", (req, res) => {
-    res.send(fs.readFileSync("src/public/javascript/" + (DEBUG? "cache/":"") + "index.js").toString())
+    res.send(fs.readFileSync("src/public/javascript/" + (DEBUG? "":"cache/") + "index.js").toString())
 })
 
 app.get("/game.js", (req, res) => {
@@ -451,7 +456,7 @@ app.get("/game.js", (req, res) => {
         return;
     }
 
-    res.send(fs.readFileSync("src/public/javascript/" + (DEBUG? "cache/":"") + "game.js").toString())
+    res.send(fs.readFileSync("src/public/javascript/" + (DEBUG? "":"cache/") + "game.js").toString())
 })
 
 app.get("/login", (req, res) => {
@@ -685,6 +690,36 @@ httpServer.listen(PORT, () => {
 
 io.on("connection", (socket) => {
     console.log("User Connection | ID: " + socket.id)
+
+    // Anticheat Injects
+    const _oldSocketOn = socket.on;
+    socket.on = function() {
+        var args = Array.from(arguments)
+
+        const _oldCallFunc = args[1]
+        args[1] = function() {
+            if (anticheat.players[socket.id] == null) {
+                createACProfile(socket.id)
+            }
+    
+            if (Date.now() > anticheat.players[socket.id].packetSpam.nextReset) {
+                anticheat.players[socket.id].packetSpam.packets = 0; 
+                anticheat.players[socket.id].nextReset = Date.now() + 1000;
+            }
+    
+            anticheat.players[socket.id].packetSpam.packets++;
+    
+            if (anticheat.players[socket.id].packetSpam.packets > GAME_ARGS.ANTICHEAT.MAX_PPS) {
+                socket.emit("error", "Kicked for exceeding packet limit")
+                socket.disconnect(true)
+                return;
+            }
+            
+            _oldCallFunc.apply(args[1], Array.from(arguments))
+        }
+
+        _oldSocketOn.apply(socket, args)
+    }
 
     socket.on("authentication", (msg) => {
         if (checkAuth(msg) != null) {
