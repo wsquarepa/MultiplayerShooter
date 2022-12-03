@@ -713,6 +713,9 @@ io.on("connection", (socket) => {
             anticheat.players[socket.id].packetSpam.packets++;
     
             if (anticheat.players[socket.id].packetSpam.packets > GAME_ARGS.ANTICHEAT.MAX_PPS) {
+                console.warn(clc.bold.red("[PSL]") + " " + clc.cyan(socket.id) + clc.white(" was disconnected for exceeding the packet limit. (" + anticheat.players[socket.id].packetSpam.packets 
+                + "/" + GAME_ARGS.ANTICHEAT.MAX_PPS + ")"))
+
                 socket.emit("error", "Kicked for exceeding packet limit")
                 socket.disconnect(true)
                 return;
@@ -923,12 +926,12 @@ io.on("connection", (socket) => {
             return;
         }
 
-        if (msg.trim().length < 1) return;
+        if (msg.toString().trim().length < 1) return;
 
         if (anticheat.chat[socket.data.auth]) {
-            anticheat.chat[socket.data.auth] += msg.trim().length;
+            anticheat.chat[socket.data.auth] += msg.toString().trim().length;
         } else {
-            anticheat.chat[socket.data.auth] = msg.trim().length;
+            anticheat.chat[socket.data.auth] = msg.toString().trim().length;
         }
 
         anticheat.chat[socket.data.auth] += GAME_ARGS.ANTICHEAT.BASE_CHAT_HEAT
@@ -936,15 +939,15 @@ io.on("connection", (socket) => {
         if (anticheat.chat[socket.data.auth] > GAME_ARGS.ANTICHEAT.MAX_CHAT_HEAT) {
             socket.emit("chatmessage", "> You are chatting too fast.")
 
-            console.warn("[CHAT] Message blocked | Room: " + socket.data.game + " | User: " + socket.data.auth + " | Message (trimmed): " + msg.trim().substring(0, 64) + 
+            console.warn("[CHAT] Message blocked | Room: " + socket.data.game + " | User: " + socket.data.auth + " | Message (trimmed): " + msg.toString().trim().substring(0, 64) + 
             " | Heat: " + Math.floor(anticheat.chat[socket.data.auth]))
 
             return;
         }
 
-        io.to(socket.data.game).emit("chatmessage", socket.data.auth + ": " + msg.trim().substring(0, 64))
+        io.to(socket.data.game).emit("chatmessage", socket.data.auth + ": " + msg.toString().trim().substring(0, 64))
 
-        console.log(clc.blackBright("[CHAT] Message sent | Room: " + socket.data.game + " | User: " + socket.data.auth + " | Message (trimmed): " + msg.trim().substring(0, 64) + 
+        console.log(clc.blackBright("[CHAT] Message sent | Room: " + socket.data.game + " | User: " + socket.data.auth + " | Message (trimmed): " + msg.toString().trim().substring(0, 64) + 
         " | Heat: " + Math.floor(anticheat.chat[socket.data.auth])))
     })
     
