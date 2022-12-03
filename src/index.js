@@ -362,6 +362,35 @@ function violate(id, checkName, times = 1, disconnect = true) {
 
 // ==============================
 
+// Javascript obfuscation
+if (!DEBUG) {
+    console.log("Beginning obfuscation...")
+    const javascript_directory = fs.readdirSync("src/public/javascript")
+    
+    if (fs.existsSync("src/public/javascript/cache")) {
+        console.warn("Removing existing javascript cache folder...")
+        fs.rmSync("src/public/javascript/cache", {
+            recursive: true,
+            force: true
+        })
+    }
+    fs.mkdirSync("src/public/javascript/cache")
+    
+    for (let dir_js = 0; dir_js < javascript_directory.length; dir_js++) { //Long variable name to not interfere with other variables
+        const fileName = javascript_directory[dir_js]
+    
+        if (!fileName.endsWith(".js")) continue;
+    
+        const obfuscated = obfuscator.obfuscate(fs.readFileSync("src/public/javascript/" + fileName).toString(), obfuscator_config).getObfuscatedCode()
+        fs.writeFileSync("src/public/javascript/cache/" + fileName, obfuscated)
+    
+        console.log("Obfuscated " + fileName + " successfully")
+    }
+    console.log("Obfuscation completed.")
+} else {
+    console.warn("No obfuscation due to not having DEBUG=0 set in .env!")
+}
+
 let userData = {}
 
 if (!fs.existsSync("data/")) {
@@ -413,11 +442,7 @@ app.get("/game", (req, res) => {
 })
 
 app.get("/index.js", (req, res) => {
-    if (DEBUG) {
-        res.send(fs.readFileSync("src/public/javascript/index.js").toString())
-    } else {
-        res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/index.js").toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode())
-    }
+    res.send(fs.readFileSync("src/public/javascript/" + (DEBUG? "cache/":"") + "index.js").toString())
 })
 
 app.get("/game.js", (req, res) => {
@@ -426,11 +451,7 @@ app.get("/game.js", (req, res) => {
         return;
     }
 
-    if (DEBUG) {
-        res.send(fs.readFileSync("src/public/javascript/game.js").toString())
-    } else {
-        res.send(obfuscator.obfuscate(fs.readFileSync("src/public/javascript/game.js").toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode())
-    }
+    res.send(fs.readFileSync("src/public/javascript/" + (DEBUG? "cache/":"") + "game.js").toString())
 })
 
 app.get("/login", (req, res) => {
