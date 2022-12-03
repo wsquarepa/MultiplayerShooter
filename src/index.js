@@ -386,7 +386,7 @@ if (!DEBUG) {
     
         if (!fileName.endsWith(".js")) continue;
     
-        const obfuscated = obfuscator.obfuscate(fs.readFileSync("src/public/javascript/" + fileName).toString(), obfuscator_config).getObfuscatedCode()
+        const obfuscated = obfuscator.obfuscate(fs.readFileSync("src/public/javascript/" + fileName).toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode()
         fs.writeFileSync("src/public/javascript/cache/" + fileName, obfuscated)
     
         console.log("Obfuscated " + fileName + " successfully")
