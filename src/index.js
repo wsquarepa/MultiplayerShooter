@@ -370,6 +370,8 @@ function violate(id, checkName, times = 1, disconnect = true) {
 // Javascript obfuscation
 if (!DEBUG) {
     console.log("Beginning obfuscation...")
+    const START_OBFUSCATION_TIME = Date.now()
+    
     const javascript_directory = fs.readdirSync("src/public/javascript")
     
     if (fs.existsSync("src/public/javascript/cache")) {
@@ -391,7 +393,8 @@ if (!DEBUG) {
     
         console.log("Obfuscated " + fileName + " successfully")
     }
-    console.log("Obfuscation completed.")
+    
+    console.log("Obfuscation completed in " + (Date.now() - START_OBFUSCATION_TIME) + "ms.")
 } else {
     console.warn("No obfuscation due to not having DEBUG=0 set in .env!")
 }
