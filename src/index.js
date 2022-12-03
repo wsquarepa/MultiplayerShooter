@@ -707,7 +707,7 @@ io.on("connection", (socket) => {
     
             if (Date.now() > anticheat.players[socket.id].packetSpam.nextReset) {
                 anticheat.players[socket.id].packetSpam.packets = 0; 
-                anticheat.players[socket.id].nextReset = Date.now() + 1000;
+                anticheat.players[socket.id].packetSpam.nextReset = Date.now() + 1000;
             }
     
             anticheat.players[socket.id].packetSpam.packets++;
@@ -718,6 +718,8 @@ io.on("connection", (socket) => {
 
                 socket.emit("error", "Kicked for exceeding packet limit")
                 socket.disconnect(true)
+
+                games[socket.data.game].players[socket.id].disconnected = true;
                 return;
             }
             
