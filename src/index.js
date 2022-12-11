@@ -647,6 +647,16 @@ app.get("/api/publicGames", (req, res) => {
     });
 })
 
+app.get("/api/bgmusiclist", (req, res) => {
+    if (!req.cookies.token || checkAuth(req.cookies.token) == null) {
+        res.status(403).send("Unauthorized | No Authentication")
+        return;
+    }
+    
+    const directory = fs.readdirSync("src/public/media/sound/game")
+    res.send(directory)
+})
+
 app.get("/admin", (req, res) => {
     if (!checkAdminAuth(req)) {
         res.send("Invalid authentication")

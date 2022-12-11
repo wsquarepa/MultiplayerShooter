@@ -10,9 +10,15 @@
         get: (searchParams, prop) => searchParams.get(prop),
     });
 
-    const BACKGROUND_AUDIO = [new Audio('audio_game_0.mp3'), new Audio('audio_game_1.mp3'), new Audio('audio_game_2.mp3'), new Audio('audio_game_3.mp3')]
-    const SHOOT_SFX = new Audio('shoot.mp3')
+    const BACKGROUND_AUDIO = [];
+    const SHOOT_SFX = new Audio('/effects/shoot.mp3')
     let audioIndex = 0;
+
+    fetch("/api/bgmusiclist").then((res) => res.json()).then((res) => {
+        for (var musicName in res) {
+            BACKGROUND_AUDIO.push(new Audio('/game/' + musicName + ".mp3"))
+        }
+    })
 
     let error = ""
 
