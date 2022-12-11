@@ -10,15 +10,9 @@
         get: (searchParams, prop) => searchParams.get(prop),
     });
 
-    const BACKGROUND_AUDIO = [];
+    var BACKGROUND_AUDIO = [];
     const SHOOT_SFX = new Audio('/effects/shoot.mp3')
     let audioIndex = 0;
-
-    fetch("/api/bgmusiclist").then((res) => res.json()).then((res) => {
-        for (var musicName in res) {
-            BACKGROUND_AUDIO.push(new Audio('/game/' + musicName + ".mp3"))
-        }
-    })
 
     let error = ""
 
@@ -333,7 +327,43 @@
         if (chatFocused) {
             if (e.key == "Enter") {
                 chatFocused = false;
-                socket.emit("chatmessage", currentlyTyping)
+
+                if (currentlyTyping.startsWith("/")) {
+                    const COMMAND = currentlyTyping.substring(1).split(" ")[0]
+                    const ARGS = currentlyTyping.substring(1).split(" ").slice(1)
+
+                    switch (COMMAND) {
+                        case 'say':
+                            socket.emit("chatmessage", ARGS.join(" "))
+                            break;
+                        case 'skip':
+                            BACKGROUND_AUDIO[audioIndex].currentTime = BACKGROUND_AUDIO[audioIndex].duration
+
+                            if (/\d/gm.test(ARGS[0])) {
+                                const songNum = parseInt(ARGS[0]);
+                                if (songNum >= 0 && songNum < BACKGROUND_AUDIO.length) {
+                                    audioIndex = songNum - 1
+                                } else {
+                                    chat.push("> [ERROR] Bad argument");
+                                    break;
+                                }
+                            } else {
+                                if (ARGS.length > 0) {
+                                    chat.push("> [ERROR] Bad argument")
+                                    break;
+                                }
+                            }
+
+                            chat.push("> [INFO] Skipped.")
+                            break;
+                        default:
+                            chat.push("> [ERROR] Unrecognized command.")
+                            break;
+                    }
+                } else {
+                    socket.emit("chatmessage", currentlyTyping)
+                }
+
                 currentlyTyping = ""
                 return;
             }
@@ -459,25 +489,31 @@
     requestAnimationFrame(frame)
     setInterval(tick, 10)
 
-    for (let music = 0; music < BACKGROUND_AUDIO.length; music++) {
-        BACKGROUND_AUDIO[music].volume = 0.2
-        
-        BACKGROUND_AUDIO[music].addEventListener("ended", () => {
-            audioIndex++;
-            if (audioIndex >= BACKGROUND_AUDIO.length) {
-                audioIndex = 0;
-            }
+    fetch("/api/bgmusiclist").then((res) => res.json()).then((res) => {
+        for (var musicName in res) {
+            BACKGROUND_AUDIO.push(new Audio('/game/' + musicName + ".mp3"))
+        }
 
+        for (let music = 0; music < BACKGROUND_AUDIO.length; music++) {
+            BACKGROUND_AUDIO[music].volume = 0.2
+            
+            BACKGROUND_AUDIO[music].addEventListener("ended", () => {
+                audioIndex++;
+                if (audioIndex >= BACKGROUND_AUDIO.length) {
+                    audioIndex = 0;
+                }
+    
+                BACKGROUND_AUDIO[audioIndex].play()
+            })
+        }
+    
+        document.body.addEventListener("keydown", () => {
             BACKGROUND_AUDIO[audioIndex].play()
         })
-    }
-
-    document.body.addEventListener("keydown", () => {
-        BACKGROUND_AUDIO[audioIndex].play()
-    })
-
-    document.body.addEventListener("mousedown", () => {
-        BACKGROUND_AUDIO[audioIndex].play()
+    
+        document.body.addEventListener("mousedown", () => {
+            BACKGROUND_AUDIO[audioIndex].play()
+        })
     })
 
     setInterval(() => {
