@@ -10,42 +10,6 @@
         }
     }
 
-    function convertToExpiresIn(starttime, endtime) {
-        var epochms = endtime - starttime
-
-        if (epochms < 0) {
-            return {
-                ms: 0,
-                s: 0,
-                m: 0,
-                h: 0,
-                d: 0
-            }
-        }
-
-        const ms = epochms % 1000
-        epochms /= 1000
-        epochms = Math.floor(epochms)
-        const s = epochms % 60
-        epochms /= 60
-        epochms = Math.floor(epochms)
-        const m = epochms % 60
-        epochms /= 60
-        epochms = Math.floor(epochms)
-        const h = epochms % 24
-        epochms /= 24
-        epochms = Math.floor(epochms)
-        const d = epochms % 30
-
-        return {
-            ms: ms,
-            s: s,
-            m: m,
-            h: h,
-            d: d
-        }
-    }
-
     function refreshPublicGames() {
         const publicGamesHolder = document.createElement("div")
         publicGamesHolder.classList.add("center")
@@ -120,7 +84,6 @@
     mainTitle.innerHTML = "Shooter"
     mainTitle.classList.add("center")
     mainTitle.style.fontSize = "24px"
-    
 
     block.appendChild(mainTitle)
     block.appendChild(document.createElement("hr"))

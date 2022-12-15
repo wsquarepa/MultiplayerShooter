@@ -433,6 +433,8 @@ app.use(compression())
 
 app.use(express.static("src/public/css"))
 
+app.use(express.static("src/public/assets"))
+
 app.use(express.static("src/public/media/images"))
 app.use(express.static("src/public/media/sound"))
 
@@ -449,17 +451,12 @@ app.get("/game", (req, res) => {
     res.render('game')
 })
 
-app.get("/index.js", (req, res) => {
-    res.send(fs.readFileSync("src/public/javascript/" + (DEBUG? "":"cache/") + "index.js").toString())
-})
-
-app.get("/game.js", (req, res) => {
-    if (!req.cookies.token || checkAuth(req.cookies.token) == null) {
-        res.status(403).send("Unauthorized | No Authentication")
-        return;
+app.get("*.js", (req, res) => {
+    if (fs.existsSync("src/public/javascript/" + (DEBUG? "":"cache/") + req.path.substring(1))) {
+        res.send(fs.readFileSync("src/public/javascript/" + (DEBUG? "":"cache/") + req.path.substring(1)).toString())
+    } else {
+        res.status(404).send("404 | Resource Not Found")
     }
-
-    res.send(fs.readFileSync("src/public/javascript/" + (DEBUG? "":"cache/") + "game.js").toString())
 })
 
 app.get("/login", (req, res) => {
