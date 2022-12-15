@@ -433,6 +433,8 @@ app.use(compression())
 
 app.use(express.static("src/public/css"))
 
+app.use(express.static("src/public/javascript/no-obfuscate"))
+
 app.use(express.static("src/public/assets"))
 
 app.use(express.static("src/public/media/images"))
