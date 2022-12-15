@@ -368,9 +368,11 @@ function violate(id, checkName, times = 1, disconnect = true) {
 // ==============================
 
 // Javascript obfuscation
+var obfs_tasks = []
+const START_OBFUSCATION_TIME = Date.now()
+
 if (!DEBUG) {
     console.log("Beginning obfuscation...")
-    const START_OBFUSCATION_TIME = Date.now()
     
     const javascript_directory = fs.readdirSync("src/public/javascript")
     
@@ -388,13 +390,21 @@ if (!DEBUG) {
     
         if (!fileName.endsWith(".js")) continue;
     
-        const obfuscated = obfuscator.obfuscate(fs.readFileSync("src/public/javascript/" + fileName).toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode()
-        fs.writeFileSync("src/public/javascript/cache/" + fileName, obfuscated)
-    
-        console.log("Obfuscated " + fileName + " successfully")
+        obfs_tasks.push(fileName)
+        setTimeout(() => {
+            const obfuscated = obfuscator.obfuscate(fs.readFileSync("src/public/javascript/" + fileName).toString(), OBFUSCATOR_SETTINGS).getObfuscatedCode()
+            fs.writeFileSync("src/public/javascript/cache/" + fileName, obfuscated)
+        
+            console.log("Obfuscated " + fileName + " successfully")
+            
+            obfs_tasks.splice(obfs_tasks.indexOf(fileName), 1)
+
+            if (obfs_tasks.length < 1) {
+                console.log("Obfuscation completed in " + (Date.now() - START_OBFUSCATION_TIME) + "ms.")
+            }
+        })
     }
     
-    console.log("Obfuscation completed in " + (Date.now() - START_OBFUSCATION_TIME) + "ms.")
 } else {
     console.warn("No obfuscation due to not having DEBUG=0 set in .env!")
 }
