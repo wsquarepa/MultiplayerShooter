@@ -800,6 +800,7 @@ io.on("connection", (socket) => {
 
         createACProfile(socket.id)
 
+        socket.to(msg).emit("chatmessage", "-> " + socket.data.auth + " joined the game")
         console.log("User Game Join | Game: " + socket.data.game + " | ID: " + socket.id)
     })
 
@@ -965,6 +966,7 @@ io.on("connection", (socket) => {
     socket.on("disconnect", (reason) => {
         if (socket.data.game != null && games[socket.data.game] != null && games[socket.data.game].players[socket.id] != null) {
             games[socket.data.game].players[socket.id].disconnected = true;
+            socket.to(socket.data.game).emit("chatmessage", "<- " + socket.data.auth + " left the game")
         }
 
         delete anticheat.players[socket.id]
@@ -1092,6 +1094,8 @@ function gameTick() {
 
                     games[keys[i]].powerups.splice(w, 1)
                     w--;
+
+                    io.to(players[p]).emit("chatmessage", "[!] Picked up " + powerup.buff + " buff!")
 
                     break;
                 }
