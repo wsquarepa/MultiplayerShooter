@@ -122,9 +122,31 @@
             return;
         }
 
+        if (!chatFocused && game.players[socket.id] != null) {
+            const hasSpeedbuff = Object.keys(game.players[socket.id].buffs).includes("speed");
+
+            if (keysDown.includes("w")) {
+                lastPos.y += -GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
+            }
+    
+            if (keysDown.includes("a")) {
+                lastPos.x += -GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
+            }
+    
+            if (keysDown.includes("s")) {
+                lastPos.y += GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
+            }
+    
+            if (keysDown.includes("d")) {
+                lastPos.x += GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
+            }
+        }
+
         const players = Object.keys(game.players)
         for (const element of players) {
             const player = game.players[element];
+
+            if (element == socket.id) continue;
 
             if (player == null) continue;
 
@@ -180,7 +202,7 @@
             fake: true
         }
 
-        ctx.translate(c.width / 2 - mainPlayer.position.x, c.height / 2 - mainPlayer.position.y)
+        ctx.translate(c.width / 2 - lastPos.x, c.height / 2 - lastPos.y)
 
         const INTERVAL = 100
 
@@ -215,11 +237,11 @@
             // do nothing, skip basically
         } else {
             ctx.beginPath()
-            ctx.arc(mainPlayer.position.x, mainPlayer.position.y, 10, 0, 2 * Math.PI)
+            ctx.arc(lastPos.x, lastPos.y, 10, 0, 2 * Math.PI)
             ctx.fill()
     
-            ctx.strokeRect(mainPlayer.position.x - 50, mainPlayer.position.y + 15, 100, 3.5)
-            ctx.fillRect(mainPlayer.position.x - 50, mainPlayer.position.y + 15, mainPlayer.health, 3.5)
+            ctx.strokeRect(lastPos.x - 50, lastPos.y + 15, 100, 3.5)
+            ctx.fillRect(lastPos.x - 50, lastPos.y + 15, mainPlayer.health, 3.5)
 
             if (mainPlayer.firecd > 0 && canShoot) {
                 SHOOT_SFX.volume = 0.15
