@@ -27,7 +27,7 @@
 
     const MAX_CHAT_LENGTH = 10;
 
-    let chat = [];
+    let chat = ["> [INFO] Game Loaded. Press and hold \"H\" for help."];
     let currentlyTyping = ""
     let chatFocused = false
 
@@ -382,7 +382,7 @@
                             chat.push("> [INFO] Skipped.")
                             break;
                         default:
-                            chat.push("> [ERROR] Unrecognized command.")
+                            chat.push("> [ERROR] Unrecognized command. Available commands: ['say', 'skip']")
                             break;
                     }
                 } else {
@@ -440,6 +440,35 @@
             case "t":
                 chatFocused = true;
                 break;
+            case "h":
+                if (document.getElementById("help-holder") != null) {
+                    break;
+                }
+
+                const helpHolder = document.createElement("div")
+                helpHolder.id = "help-holder"
+                helpHolder.classList.add("middle")
+                helpHolder.style.backgroundColor = "black"
+                helpHolder.style.color = "white"
+                helpHolder.style.padding = "10px"
+                helpHolder.style.textAlign = "center"
+
+                const helptitle = document.createElement("h1")
+                helptitle.innerHTML = "Game Help"
+
+                const helpParagraph = document.createElement("p")
+                helpParagraph.innerHTML = `
+                W A S D - Move, Up Left Down Right<br>
+                T - Open chat<br>
+                Esc - Close chat (without sending message)<br>
+                Enter - Send chat message
+                `
+
+                helpHolder.appendChild(helptitle)
+                helpHolder.appendChild(helpParagraph)
+
+                document.body.appendChild(helpHolder)
+                break;
             default:
                 //nothing
         }
@@ -474,6 +503,9 @@
                     direction: "left",
                     enable: "0"
                 })
+                break;
+            case "h":
+                document.getElementById("help-holder").remove()
                 break;
             default:
                 //nothing
