@@ -234,12 +234,7 @@
         ctx.lineWidth = 1
 
         if (mainPlayer.fake) {
-            // LOL DIED BIG l
-            ctx.font = "64px Comfortaa";
-            ctx.fillStyle = "#F08080"
-            ctx.textAlign = "center"
-            ctx.fillText("=== YOU DIED ===", c.width / 2, c.height / 2 - 35)
-            ctx.fillText("Reload the page to play again", c.width / 2, c.height / 2 + 35)
+            // Died
         } else {
             ctx.beginPath()
             ctx.arc(lastPos.x, lastPos.y, 10, 0, 2 * Math.PI)
@@ -329,6 +324,13 @@
             ctx.textAlign = "center"
             ctx.fillText("===ERROR===", c.width / 2, c.height / 2 - 35)
             ctx.fillText(error, c.width / 2, c.height / 2 + 35)
+        } else if (mainPlayer.fake) {
+            // LOL DIED BIG l
+            ctx.font = "64px Comfortaa";
+            ctx.fillStyle = "#F08080"
+            ctx.textAlign = "center"
+            ctx.fillText("=== YOU DIED ===", c.width / 2, c.height / 2 - 35)
+            ctx.fillText("Reload the page to play again", c.width / 2, c.height / 2 + 35)
         }
 
         if (mousePos != null) {
