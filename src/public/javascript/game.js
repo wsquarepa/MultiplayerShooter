@@ -253,9 +253,6 @@
 
         if (mainPlayer.firecd == 0) canShoot = true;
 
-        ctx.fillStyle = "#FFFFFF"
-        ctx.font = "20px Comfortaa";
-
         for (let p = 0; p < players.length; p++) {
             if (p == playerID) continue;
 
@@ -318,17 +315,13 @@
 
         ctx.fillText(currentlyTyping, 10, c.height - 15)
 
+        ctx.font = "64px Comfortaa";
+        ctx.fillStyle = "#F08080"
+        ctx.textAlign = "center"
         if (error.length > 0) {
-            ctx.font = "64px Comfortaa";
-            ctx.fillStyle = "#F08080"
-            ctx.textAlign = "center"
             ctx.fillText("===ERROR===", c.width / 2, c.height / 2 - 35)
             ctx.fillText(error, c.width / 2, c.height / 2 + 35)
         } else if (mainPlayer.fake) {
-            // LOL DIED BIG l
-            ctx.font = "64px Comfortaa";
-            ctx.fillStyle = "#F08080"
-            ctx.textAlign = "center"
             ctx.fillText("=== YOU DIED ===", c.width / 2, c.height / 2 - 35)
             ctx.fillText("Reload the page to play again", c.width / 2, c.height / 2 + 35)
         }
