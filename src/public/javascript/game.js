@@ -240,6 +240,9 @@
             ctx.textAlign = "center"
             ctx.fillText("=== YOU DIED ===", c.width / 2, c.height / 2 - 35)
             ctx.fillText("Reload the page to play again", c.width / 2, c.height / 2 + 35)
+
+            ctx.fillStyle = "#FFFFFF"
+            ctx.font = "20px Comfortaa";
         } else {
             ctx.beginPath()
             ctx.arc(lastPos.x, lastPos.y, 10, 0, 2 * Math.PI)
