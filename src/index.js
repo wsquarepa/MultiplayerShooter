@@ -728,7 +728,7 @@ io.on("connection", (socket) => {
                 socket.emit("error", "Kicked for exceeding packet limit")
                 socket.disconnect(true)
 
-                games[socket.data.game].players[socket.id].disconnected = true;
+                if (games[socket.data.game].players[socket.id] != null) games[socket.data.game].players[socket.id].disconnected = true;
                 return;
             }
             
