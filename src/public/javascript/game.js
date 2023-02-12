@@ -36,6 +36,11 @@
         y: 0
     }
 
+    let serverPos = {
+        x: 0,
+        y: 0
+    }
+
     let mousePos;
 
     let keysDown = [];
@@ -92,7 +97,7 @@
         game = JSON.parse(JSON.stringify(msg))
 
         if (Object.keys(game.players).includes(socket.id)) {
-            lastPos = JSON.parse(JSON.stringify(game.players[socket.id].position))
+            serverPos = JSON.parse(JSON.stringify(game.players[socket.id].position))
         }
 
         analysis.ppsdown++;
@@ -122,6 +127,14 @@
             return;
         }
 
+        const desync_offset = Math.sqrt(Math.pow(serverPos.x - lastPos.x, 2) + Math.pow(serverPos.y - lastPos.y, 2))
+        if (desync_offset > 0) {
+            lastPos = smoothUpdate(lastPos, serverPos, 0.1)
+
+            lastPos.x = Math.round(lastPos.x);
+            lastPos.y = Math.round(lastPos.y)
+        }
+
         if (!chatFocused && game.players[socket.id] != null) {
             const hasSpeedbuff = Object.keys(game.players[socket.id].buffs).includes("speed");
 
@@ -140,6 +153,11 @@
             if (keysDown.includes("d")) {
                 lastPos.x += GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
             }
+
+            if (lastPos.x > 2000) lastPos.x = 2000;
+            if (lastPos.x < -2000) lastPos.x = -2000;
+            if (lastPos.y > 2000) lastPos.y = 2000;
+            if (lastPos.y < -2000) lastPos.y = -2000
         }
 
         const players = Object.keys(game.players)
@@ -297,6 +315,8 @@
         ctx.fillText("FPS: " + analytics.fps, c.width - 5, 40)
         ctx.fillText("PPS: " + analytics.ppsup + " ↑ /" + analytics.ppsdown + " ↓", c.width - 5, 60)
         ctx.fillText("NET: " + analytics.netup + " kb/s ↑ / " + analytics.netdown + " kb/s ↓", c.width - 5, 80)
+        ctx.fillText("Server X:" + serverPos.x + " Y:" + serverPos.y, c.width - 5, 100)
+        ctx.fillText("Client X:" + lastPos.x + " Y:" + lastPos.y, c.width - 5, 120)
 
         ctx.textAlign = "left"
 
@@ -344,6 +364,15 @@
 
         requestAnimationFrame(frame)
     }
+
+    function smoothUpdate(lastPos, serverPos, t) {
+        const interpolatedPos = {
+            x: lastPos.x + (serverPos.x - lastPos.x) * t,
+            y: lastPos.y + (serverPos.y - lastPos.y) * t
+        };
+
+        return interpolatedPos;
+    }      
 
     document.addEventListener("keydown", (e) => {
         if (keysDown.includes(e.key)) return;
