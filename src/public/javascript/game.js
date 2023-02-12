@@ -36,6 +36,8 @@
         y: 0
     }
 
+    let lastServerPacket = 0
+    let syncRequired = false;
     let serverPos = {
         x: 0,
         y: 0
@@ -100,6 +102,11 @@
             serverPos = JSON.parse(JSON.stringify(game.players[socket.id].position))
         }
 
+        if (Date.now() - lastServerPacket > 150) {
+            syncRequired = true;
+            lastServerPacket = Date.now()
+        }
+
         analysis.ppsdown++;
         analysis.netdown += JSON.stringify(msg).length
     })
@@ -126,14 +133,8 @@
         if (game == null) {
             return;
         }
-
-        const desync_offset = Math.sqrt(Math.pow(serverPos.x - lastPos.x, 2) + Math.pow(serverPos.y - lastPos.y, 2))
-        if (desync_offset > 0) {
-            lastPos = smoothUpdate(lastPos, serverPos, 0.1)
-
-            lastPos.x = Math.round(lastPos.x);
-            lastPos.y = Math.round(lastPos.y)
-        }
+        
+        sync()
 
         if (!chatFocused && game.players[socket.id] != null) {
             const hasSpeedbuff = Object.keys(game.players[socket.id].buffs).includes("speed");
@@ -318,6 +319,8 @@
         ctx.fillText("Server X:" + serverPos.x + " Y:" + serverPos.y, c.width - 5, 100)
         ctx.fillText("Client X:" + lastPos.x + " Y:" + lastPos.y, c.width - 5, 120)
 
+        if (syncRequired) ctx.fillText("Syncing...", c.width - 5, c.height - 10)
+
         ctx.textAlign = "left"
 
         if (chatFocused) {
@@ -373,6 +376,20 @@
 
         return interpolatedPos;
     }      
+
+    function sync() {
+        if (syncRequired) {
+            lastPos = smoothUpdate(lastPos, serverPos, 0.1)
+
+            lastPos.x = Math.round(lastPos.x * 100) / 100;
+            lastPos.y = Math.round(lastPos.y * 100) / 100;
+
+            const distance = Math.sqrt(Math.pow(lastPos.x - serverPos.x, 2) + Math.pow(lastPos.y - serverPos.y, 2))
+            if (distance < 10) {
+                syncRequired = false;
+            }
+        }
+    }
 
     document.addEventListener("keydown", (e) => {
         if (keysDown.includes(e.key)) return;
