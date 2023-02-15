@@ -318,7 +318,7 @@
         ctx.fillText("PPS: " + analytics.ppsup + " ↑ /" + analytics.ppsdown + " ↓", c.width - 5, 60)
         ctx.fillText("NET: " + analytics.netup + " kb/s ↑ / " + analytics.netdown + " kb/s ↓", c.width - 5, 80)
         ctx.fillText("Server X:" + serverPos.x + " Y:" + serverPos.y, c.width - 5, 100)
-        ctx.fillText("Client X:" + lastPos.x + " Y:" + lastPos.y, c.width - 5, 120)
+        ctx.fillText("Client X:" + lastPos.x.toFixed(2) + " Y:" + lastPos.y.toFixed(2), c.width - 5, 120)
 
         if (syncRequired) ctx.fillText("Syncing...", c.width - 5, c.height - 10)
 
@@ -378,15 +378,17 @@
         return interpolatedPos;
     }      
 
-    function sync() {
-        if (syncRequired) {
+    function sync(force) {
+        if (syncRequired || force) {
+            syncRequired = true;
+
             lastPos = smoothUpdate(lastPos, serverPos, 0.1)
 
             lastPos.x = Math.round(lastPos.x * 100) / 100;
             lastPos.y = Math.round(lastPos.y * 100) / 100;
 
             const distance = Math.sqrt(Math.pow(lastPos.x - serverPos.x, 2) + Math.pow(lastPos.y - serverPos.y, 2))
-            if (distance < 10) {
+            if (distance < 3) {
                 syncRequired = false;
             }
         }
@@ -647,6 +649,8 @@
             netup: 0,
             netdown: 0
         }
+
+        sync(true)
     }, 1000)
 
     document.body.appendChild(c)
