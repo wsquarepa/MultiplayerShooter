@@ -104,8 +104,9 @@
 
         if (Date.now() - lastServerPacket > 150) {
             syncRequired = true;
-            lastServerPacket = Date.now()
         }
+
+        lastServerPacket = Date.now()
 
         analysis.ppsdown++;
         analysis.netdown += JSON.stringify(msg).length
