@@ -43,6 +43,8 @@
         y: 0
     }
 
+    let debug = false;
+
     let mousePos;
 
     let keysDown = [];
@@ -263,6 +265,14 @@
             ctx.strokeRect(lastPos.x - 50, lastPos.y + 15, 100, 3.5)
             ctx.fillRect(lastPos.x - 50, lastPos.y + 15, mainPlayer.health, 3.5)
 
+            if (debug) {
+                ctx.strokeStyle = "#F08080"
+                ctx.beginPath()
+                ctx.arc(serverPos.x, serverPos.y, 10, 0, 2 * Math.PI)
+                ctx.stroke()
+                ctx.strokeStyle = "#FFFFFF"
+            }
+
             if (mainPlayer.firecd > 0 && canShoot) {
                 SHOOT_SFX.volume = 0.15
                 SHOOT_SFX.currentTime = 0
@@ -364,6 +374,15 @@
             ctx.moveTo(mousePos.x - 10, mousePos.y + 10)
             ctx.lineTo(mousePos.x + 10, mousePos.y - 10)
             ctx.stroke()
+
+            if (debug) {
+                ctx.strokeStyle = "#F08080"
+                ctx.beginPath()
+                ctx.moveTo(c.width / 2, c.height / 2)
+                ctx.lineTo(mousePos.x, mousePos.y)
+                ctx.stroke()
+                ctx.strokeStyle = "#FFFFFF"
+            }
         }
 
         requestAnimationFrame(frame)
@@ -508,6 +527,7 @@
                 const helpParagraph = document.createElement("p")
                 helpParagraph.innerHTML = `
                 W A S D - Move, Up Left Down Right<br>
+                O - Toggle Debug<br>
                 T - Open chat<br>
                 Esc - Close chat (without sending message)<br>
                 Enter - Send chat message
@@ -518,6 +538,8 @@
 
                 document.body.appendChild(helpHolder)
                 break;
+            case "o":
+                debug = !debug
             default:
                 //nothing
         }
