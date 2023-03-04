@@ -611,6 +611,8 @@
     socket.emit("authentication", getCookie("token"))
     socket.emit("game", params.id)
 
+    chat.push("> Game ID: " + params.id + " | Share the link in the search bar to your friends!")
+
     c.width = document.body.clientWidth
     c.height = document.body.clientHeight
 
