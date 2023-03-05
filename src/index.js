@@ -30,7 +30,7 @@ const GAME_ARGS = {
     WORLDBORDER: 2000,
     TICKS_BEFORE_POWERUP: 10 * 10, // 10 seconds,
     MAX_POWERUPS: 20,
-    POWERUP_HTIBOX: 20,
+    POWERUP_HTIBOX: 40,
     POWERUP_POSSIBILITY: ["attack", "health", "speed"],
     BUFFS: {
         SPEED: 2,

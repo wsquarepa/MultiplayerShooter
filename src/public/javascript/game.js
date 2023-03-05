@@ -409,6 +409,7 @@
             const distance = Math.sqrt(Math.pow(lastPos.x - serverPos.x, 2) + Math.pow(lastPos.y - serverPos.y, 2))
             if (distance < 3) {
                 syncRequired = false;
+                lastPos = serverPos;
             }
         }
     }
