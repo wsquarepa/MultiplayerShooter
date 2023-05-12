@@ -24,6 +24,7 @@
 
     let game = null;
     let canShoot = true;
+    let trackTarget = false;
 
     const MAX_CHAT_LENGTH = 10;
 
@@ -45,7 +46,10 @@
 
     let debug = false;
 
-    let mousePos;
+    let mousePos = {
+        x: document.body.clientWidth / 2,
+        y: document.body.clientHeight / 2
+    };
 
     let keysDown = [];
 
@@ -141,21 +145,22 @@
 
         if (!chatFocused && game.players[socket.id] != null) {
             const hasSpeedbuff = Object.keys(game.players[socket.id].buffs).includes("speed");
+            const movementAmount = GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
 
             if (keysDown.includes("w")) {
-                lastPos.y += -GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
+                lastPos.y += -movementAmount
             }
     
             if (keysDown.includes("a")) {
-                lastPos.x += -GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
+                lastPos.x += -movementAmount
             }
     
             if (keysDown.includes("s")) {
-                lastPos.y += GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
+                lastPos.y += movementAmount
             }
     
             if (keysDown.includes("d")) {
-                lastPos.x += GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
+                lastPos.x += movementAmount
             }
 
             if (lastPos.x > 2000) lastPos.x = 2000;
@@ -224,7 +229,7 @@
             fake: true
         }
 
-        ctx.translate(c.width / 2 - lastPos.x, c.height / 2 - lastPos.y)
+        ctx.translate((c.width / 2 - lastPos.x) + (((c.width / 2) - mousePos.x) / 8), (c.height / 2 - lastPos.y) + (((c.height / 2) - mousePos.y) / 8))
 
         const INTERVAL = 100
 
@@ -292,6 +297,13 @@
             ctx.arc(player.position.x, player.position.y, 10, 0, 2 * Math.PI)
             ctx.fill()
 
+            if (trackTarget) {
+                ctx.strokeStyle = "#F08080"
+                ctx.beginPath()
+                ctx.arc(player.position.x, player.position.y, 20, (Date.now() % 10), (Date.now() % 10) + Math.PI / 2)
+                ctx.stroke()
+            }
+
             ctx.strokeRect(player.position.x - 50, player.position.y + 15, 100, 3.5)
             ctx.fillRect(player.position.x - 50, player.position.y + 15, player.health, 3.5)
 
@@ -304,6 +316,13 @@
             ctx.beginPath()
             ctx.arc(bullet.x, bullet.y, 5, 0, 2 * Math.PI)
             ctx.fill()
+
+            if (trackTarget) {
+                ctx.strokeStyle = "#F08080"
+                ctx.beginPath()
+                ctx.arc(bullet.x, bullet.y, 15, (Date.now() % 10), (Date.now() % 10) + Math.PI / 2)
+                ctx.stroke()
+            }
         }
 
         ctx.fillStyle = "#B9E5E1"
@@ -314,6 +333,13 @@
             ctx.beginPath()
             ctx.arc(powerup.position.x, powerup.position.y, 7, 0, 2 * Math.PI)
             ctx.fill()
+
+            if (trackTarget) {
+                ctx.strokeStyle = "#B9E5E1"
+                ctx.beginPath()
+                ctx.arc(powerup.position.x, powerup.position.y, 17, (Date.now() % 10), (Date.now() % 10) + Math.PI / 2)
+                ctx.stroke()
+            }
         }
 
         ctx.fillStyle = "#FFFFFF"
@@ -361,6 +387,10 @@
         }
 
         if (mousePos != null) {
+            if (trackTarget) {
+                ctx.strokeStyle = "#F08080"
+            }
+
             ctx.beginPath()
             ctx.arc(mousePos.x, mousePos.y, 8, 0, 2 * Math.PI)
             ctx.stroke()
@@ -381,8 +411,9 @@
                 ctx.moveTo(c.width / 2, c.height / 2)
                 ctx.lineTo(mousePos.x, mousePos.y)
                 ctx.stroke()
-                ctx.strokeStyle = "#FFFFFF"
             }
+
+            ctx.strokeStyle = "#FFFFFF"
         }
 
         requestAnimationFrame(frame)
@@ -585,11 +616,19 @@
     })
 
     document.addEventListener("mousedown", (e) => {
-        socket.emit("fire", "1")
+        if (e.button == 0) {
+            socket.emit("fire", "1")
+        } else {
+            trackTarget = true; 
+        }
     })
 
     document.addEventListener("mouseup", (e) => {
-        socket.emit("fire", "0")
+        if (e.button == 0) {
+            socket.emit("fire", "0")
+        } else {
+            trackTarget = false;
+        }
     })
 
     document.addEventListener("mousemove", (e) => {
@@ -602,6 +641,10 @@
             x: e.x,
             y: e.y
         }
+    })
+
+    document.addEventListener("contextmenu", (e) => {
+        e.preventDefault()
     })
 
     window.addEventListener("resize", (e) => {
