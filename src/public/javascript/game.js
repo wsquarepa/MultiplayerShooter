@@ -25,6 +25,7 @@
     let game = null;
     let canShoot = true;
     let trackTarget = false;
+    let playerDead = false;
 
     const MAX_CHAT_LENGTH = 10;
 
@@ -134,13 +135,17 @@
 
         analysis.ppsdown++;
         analysis.netdown += JSON.stringify(msg).length
+
+        if (msg == "Game Over") playerDead = true;
     })
-    
+
     function tick() {
         if (game == null) {
             return;
         }
         
+        if (playerDead) return;
+
         sync()
 
         if (!chatFocused && game.players[socket.id] != null) {
@@ -194,9 +199,7 @@
             }
         }
 
-        for (const element of game.bullets) {
-            const bullet = element
-
+        for (const bullet of game.bullets) {
             bullet.x += bullet.dx / 10
             bullet.y += bullet.dy / 10
         }
@@ -297,32 +300,16 @@
             ctx.arc(player.position.x, player.position.y, 10, 0, 2 * Math.PI)
             ctx.fill()
 
-            if (trackTarget) {
-                ctx.strokeStyle = "#F08080"
-                ctx.beginPath()
-                ctx.arc(player.position.x, player.position.y, 20, (Date.now() % 10), (Date.now() % 10) + Math.PI / 2)
-                ctx.stroke()
-            }
-
             ctx.strokeRect(player.position.x - 50, player.position.y + 15, 100, 3.5)
             ctx.fillRect(player.position.x - 50, player.position.y + 15, player.health, 3.5)
 
             ctx.fillText(player.username, player.position.x, player.position.y - 25)
         }
 
-        for (const element of game.bullets) {
-            const bullet = element
-
+        for (const bullet of game.bullets) {
             ctx.beginPath()
             ctx.arc(bullet.x, bullet.y, 5, 0, 2 * Math.PI)
             ctx.fill()
-
-            if (trackTarget) {
-                ctx.strokeStyle = "#F08080"
-                ctx.beginPath()
-                ctx.arc(bullet.x, bullet.y, 15, (Date.now() % 10), (Date.now() % 10) + Math.PI / 2)
-                ctx.stroke()
-            }
         }
 
         ctx.fillStyle = "#B9E5E1"
@@ -334,15 +321,14 @@
             ctx.arc(powerup.position.x, powerup.position.y, 7, 0, 2 * Math.PI)
             ctx.fill()
 
-            if (trackTarget) {
-                ctx.strokeStyle = "#B9E5E1"
-                ctx.beginPath()
-                ctx.arc(powerup.position.x, powerup.position.y, 17, (Date.now() % 10), (Date.now() % 10) + Math.PI / 2)
-                ctx.stroke()
-            }
+            ctx.strokeStyle = "#B9E5E1"
+            ctx.beginPath()
+            ctx.arc(powerup.position.x, powerup.position.y, 17, (Date.now() % 10), (Date.now() % 10) + Math.PI / 2)
+            ctx.stroke()
         }
 
         ctx.fillStyle = "#FFFFFF"
+        ctx.strokeStyle = "#FFFFFF"
 
         ctx.resetTransform()
 
@@ -430,17 +416,19 @@
 
     function sync(force) {
         if (syncRequired || force) {
-            syncRequired = true;
-
-            lastPos = smoothUpdate(lastPos, serverPos, 0.1)
-
-            lastPos.x = Math.round(lastPos.x * 100) / 100;
-            lastPos.y = Math.round(lastPos.y * 100) / 100;
-
-            const distance = Math.sqrt(Math.pow(lastPos.x - serverPos.x, 2) + Math.pow(lastPos.y - serverPos.y, 2))
-            if (distance < 3) {
-                syncRequired = false;
-                lastPos = serverPos;
+            if (Date.now() - lastServerPacket < 500) {
+                syncRequired = true;
+    
+                lastPos = smoothUpdate(lastPos, serverPos, 0.1)
+    
+                lastPos.x = Math.round(lastPos.x * 100) / 100;
+                lastPos.y = Math.round(lastPos.y * 100) / 100;
+    
+                const distance = Math.sqrt(Math.pow(lastPos.x - serverPos.x, 2) + Math.pow(lastPos.y - serverPos.y, 2))
+                if (distance < 3) {
+                    syncRequired = false;
+                    lastPos = serverPos;
+                }
             }
         }
     }
@@ -619,7 +607,7 @@
         if (e.button == 0) {
             socket.emit("fire", "1")
         } else {
-            trackTarget = true; 
+            
         }
     })
 
@@ -627,7 +615,7 @@
         if (e.button == 0) {
             socket.emit("fire", "0")
         } else {
-            trackTarget = false;
+
         }
     })
 
@@ -717,9 +705,9 @@
             netup: 0,
             netdown: 0
         }
-
-        sync(true)
     }, 1000)
+
+    setInterval(() => {sync(true)}, 100)
 
     document.body.appendChild(c)
 })()

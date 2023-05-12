@@ -24,7 +24,7 @@ const DOMAIN_LOCK = JSON.parse(process.env.DOMAIN_LOCK || "[\"localhost\"]")
 const DOMAIN_LOCK_REDIRECT = process.env.DOMAIN_LOCK_REDIRECT || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 const GAME_ARGS = {
-    PUBLIC_LOBBIES: 5,
+    PUBLIC_LOBBIES: 10,
     MOVEMENT_SPEED: 20,
     TICKS_BEFORE_GAME_TIMEOUT: 10 * 60, //1 Minute
     WORLDBORDER: 2000,
@@ -51,7 +51,7 @@ const GAME_ARGS = {
         MAX_MOUSE_DISTANCE: 500,
         MIN_TIME_BETWEEN_PING: 4900, //Client is 5000
         PINGSPAM_VLS: 25,
-        MAX_PPS: 100,
+        MAX_PPS: 200,
         BASE_CHAT_HEAT: 4,
         MAX_CHAT_HEAT: 250,
         CHAT_HEAT_DECLINE: 0.2
@@ -987,11 +987,19 @@ function gameTick() {
 
             if (player == null) continue;
 
-            if (player.disconnected || player.health < 1) {
+            if (player.disconnected) {
                 delete games[keys[i]].players[players[p]]
                 players.splice(p, 1)
                 p--;
                 continue;
+            }
+
+            if (player.health < 1) {
+                io.to(players[p]).emit("error", "Game Over")
+
+                delete games[keys[i]].players[players[p]]
+                players.splice(p, 1)
+                p--;
             }
 
             if (player.movement.up) {
@@ -1092,6 +1100,10 @@ function gameTick() {
                     }
 
                     player.buffs[powerup.buff] = 0
+
+                    if (player.health < 0) {
+                        player.health = 0
+                    }
 
                     games[keys[i]].powerups.splice(w, 1)
                     w--;
@@ -1199,7 +1211,7 @@ if (DEBUG) {
                 process.exit()
                 break;
             default:
-                console.error("Not a valid command. Commands: [stop]")
+                console.error("Not a valid command. Commands: [echo, stop]")
         }
     })
 }
