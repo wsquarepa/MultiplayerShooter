@@ -40,7 +40,7 @@ const GAME_ARGS = {
     BUFF_TIMEOUT: 10 * 10,
     PLAYER_HITBOX: 12,
     PLAYER_FIRECD: 0,
-    BULLET_SPEED: 30,
+    BULLET_SPEED: 50,
     BULLET_DAMAGE: () => { return rand(3, 9) },
     BULLET_RANGE: 500,
     BULLET_LIFETIME: 100,
@@ -365,6 +365,48 @@ function violate(id, checkName, times = 1, disconnect = true) {
         console.warn(clc.bold.red("[ANTICHEAT]") + " " + clc.cyan(id) + clc.white(" violated ") + clc.cyan(checkName) + " (x" + anticheat.players[id].checkVls[checkName] + ")")
     }
 }
+
+function isCloseToLine(obj, pos, range, bound) {
+    // Calculate the end point of the line segment
+    const endX = obj.x + range;
+    const endY = obj.y + (range * obj.slope);
+  
+    // Calculate the distance from the line segment to the point
+    const distance = distanceFromPointToLine(pos.x, pos.y, obj.x, obj.y, endX, endY);
+
+    // Check if the distance is less than the bounding box value
+    return distance < bound;
+}
+
+// Utility function to calculate the distance from a point to a line segment
+function distanceFromPointToLine(x, y, x1, y1, x2, y2) {
+    const a = x - x1;
+    const b = y - y1;
+    const c = x2 - x1;
+    const d = y2 - y1;
+
+    const dot = a * c + b * d;
+    const lenSq = c * c + d * d;
+    const param = (lenSq !== 0) ? dot / lenSq : 0;
+
+    let xx, yy;
+
+    if (param < 0) {
+        xx = x1;
+        yy = y1;
+    } else if (param > 1) {
+        xx = x2;
+        yy = y2;
+    } else {
+        xx = x1 + param * c;
+        yy = y1 + param * d;
+    }
+
+    const dx = x - xx;
+    const dy = y - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
 
 // ==============================
 
@@ -1058,31 +1100,46 @@ function gameTick() {
         }
 
         for (let b = 0; b < game.bullets.length; b++) {
-            const bullet = game.bullets[b]
-
+            const bullet = game.bullets[b];
+        
             if (Math.sqrt(Math.pow(bullet.sx - bullet.x) + Math.pow(bullet.sy - bullet.y)) > GAME_ARGS.BULLET_RANGE || bullet.lifetime > GAME_ARGS.BULLET_LIFETIME) {
-                games[keys[i]].bullets.splice(b, 1)
+                games[keys[i]].bullets.splice(b, 1);
                 b--;
                 continue;
             }
-
-            bullet.x += bullet.dx
-            bullet.y += bullet.dy
-
-            bullet.lifetime++
-
+        
             for (let p = 0; p < players.length; p++) {
                 const player = game.players[players[p]];
+        
+                if (bullet.owner != players[p]) {
+                    // Calculate the slope of the line segment
+                    let slope = bullet.dy / bullet.dx
 
-                if (Math.abs(player.position.x - bullet.x) < GAME_ARGS.PLAYER_HITBOX && Math.abs(player.position.y - bullet.y) < GAME_ARGS.PLAYER_HITBOX && bullet.owner != players[p]) {
-                    player.health -= bullet.damage
+                    let bulletPosition = {
+                        x: bullet.x,
+                        y: bullet.y,
+                        slope: slope
+                    }
 
-                    games[keys[i]].bullets.splice(b, 1)
-                    b--;
+                    let playerPosition = {
+                        x: player.position.x,
+                        y: player.position.y,
+                    }
 
-                    break;
+                    if (isCloseToLine(bulletPosition, playerPosition, GAME_ARGS.BULLET_SPEED, GAME_ARGS.PLAYER_HITBOX)) {
+                        player.health -= bullet.damage;
+                        games[keys[i]].bullets.splice(b, 1);
+                        b--;
+                        break;
+                    }
+
                 }
             }
+        
+            bullet.x += bullet.dx;
+            bullet.y += bullet.dy;
+    
+            bullet.lifetime++;
         }
 
         for (let w = 0; w < game.powerups.length; w++) {

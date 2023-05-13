@@ -143,12 +143,10 @@
         if (game == null) {
             return;
         }
-        
-        if (playerDead) return;
 
         sync()
 
-        if (!chatFocused && game.players[socket.id] != null) {
+        if (!chatFocused && game.players[socket.id] != null && !playerDead) {
             const hasSpeedbuff = Object.keys(game.players[socket.id].buffs).includes("speed");
             const movementAmount = GAME_ARGS.MOVEMENT_SPEED * (hasSpeedbuff? 2 : 1)
 
@@ -365,11 +363,13 @@
         ctx.fillStyle = "#F08080"
         ctx.textAlign = "center"
         if (error.length > 0) {
-            ctx.fillText("===ERROR===", c.width / 2, c.height / 2 - 35)
-            ctx.fillText(error, c.width / 2, c.height / 2 + 35)
-        } else if (mainPlayer.fake) {
-            ctx.fillText("=== YOU DIED ===", c.width / 2, c.height / 2 - 35)
-            ctx.fillText("Reload the page to play again", c.width / 2, c.height / 2 + 35)
+            if (error == "Game Over") {
+                ctx.fillText("=== YOU DIED ===", c.width / 2, c.height / 2 - 35)
+                ctx.fillText("Reload the page to play again", c.width / 2, c.height / 2 + 35)
+            } else {
+                ctx.fillText("===ERROR===", c.width / 2, c.height / 2 - 35)
+                ctx.fillText(error, c.width / 2, c.height / 2 + 35)
+            }
         }
 
         if (mousePos != null) {
