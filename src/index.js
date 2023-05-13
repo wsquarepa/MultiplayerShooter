@@ -1000,6 +1000,7 @@ function gameTick() {
                 delete games[keys[i]].players[players[p]]
                 players.splice(p, 1)
                 p--;
+                continue;
             }
 
             if (player.movement.up) {
