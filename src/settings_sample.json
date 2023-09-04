@@ -1,0 +1,37 @@
+{
+    "PUBLIC_LOBBIES": 10,
+    "MOVEMENT_SPEED": 20,
+    "TICKS_BEFORE_GAME_TIMEOUT": 600,
+    "WORLDBORDER": 2000,
+    "TICKS_BEFORE_POWERUP": 100,
+    "MAX_POWERUPS": 20,
+    "POWERUP_HTIBOX": 40,
+    "POWERUP_POSSIBILITY": ["attack", "health", "speed"],
+    "BUFFS": {
+        "SPEED": 2,
+        "ATTACK": 1.5,
+        "HEALTH": 10
+    },
+    "BUFF_TIMEOUT": 100,
+    "PLAYER_HITBOX": 12,
+    "PLAYER_FIRECD": 0,
+    "BULLET_SPEED": 100,
+    "BULLET_DAMAGE": {
+        "MIN": 3,
+        "MAX": 10
+    },
+    "BULLET_RANGE": 500,
+    "BULLET_LIFETIME": 100,
+    "BULLET_RANDOMNESS": 12,
+    "ANTICHEAT": {
+        "MAX_VLS": 100,
+        "DISPLAY_EVERY": 8,
+        "MAX_MOUSE_DISTANCE": 500,
+        "MIN_TIME_BETWEEN_PING": 4900,
+        "PINGSPAM_VLS": 25,
+        "MAX_PPS": 200,
+        "BASE_CHAT_HEAT": 4,
+        "MAX_CHAT_HEAT": 250,
+        "CHAT_HEAT_DECLINE": 0.2
+    }
+}
