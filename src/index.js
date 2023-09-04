@@ -23,38 +23,12 @@ const JWT_KEY = process.env.JWT_KEY || "secret"
 const DOMAIN_LOCK = JSON.parse(process.env.DOMAIN_LOCK || "[\"localhost\"]")
 const DOMAIN_LOCK_REDIRECT = process.env.DOMAIN_LOCK_REDIRECT || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
-const GAME_ARGS = {
-    PUBLIC_LOBBIES: 5,
-    MOVEMENT_SPEED: 20,
-    TICKS_BEFORE_GAME_TIMEOUT: 10 * 60, //1 Minute
-    WORLDBORDER: 2000,
-    TICKS_BEFORE_POWERUP: 10 * 10, // 10 seconds,
-    MAX_POWERUPS: 20,
-    POWERUP_HTIBOX: 20,
-    POWERUP_POSSIBILITY: ["attack", "health", "speed"],
-    BUFFS: {
-        SPEED: 2,
-        ATTACK: 1.5,
-        HEALTH: 10
-    },
-    BUFF_TIMEOUT: 10 * 10,
-    PLAYER_HITBOX: 12,
-    PLAYER_FIRECD: 1,
-    BULLET_SPEED: 30,
-    BULLET_DAMAGE: () => { return rand(3, 9) },
-    BULLET_RANGE: 500,
-    BULLET_LIFETIME: 100,
-    ANTICHEAT: {
-        MAX_VLS: 100,
-        DISPLAY_EVERY: 8,
-        MAX_MOUSE_DISTANCE: 500,
-        MIN_TIME_BETWEEN_PING: 4900, //Client is 5000
-        PINGSPAM_VLS: 25,
-        MAX_PPS: 100,
-        BASE_CHAT_HEAT: 4,
-        MAX_CHAT_HEAT: 250,
-        CHAT_HEAT_DECLINE: 0.2
-    }
+if (fs.existsSync("src/settings.json")) {
+    var GAME_ARGS = JSON.parse(fs.readFileSync("src/settings.json", "utf8"))
+} else {
+    console.error("Settings file not found, creating.")
+    fs.copyFileSync("src/settings_sample.json", "src/settings.json")
+    process.exit()
 }
 
 const DEBUG = process.env.DEBUG == null? true : (process.env.DEBUG == "1")
@@ -363,6 +337,51 @@ function violate(id, checkName, times = 1, disconnect = true) {
     if (anticheat.players[id].checkVls[checkName] % GAME_ARGS.ANTICHEAT.DISPLAY_EVERY == 0) {
         console.warn(clc.bold.red("[ANTICHEAT]") + " " + clc.cyan(id) + clc.white(" violated ") + clc.cyan(checkName) + " (x" + anticheat.players[id].checkVls[checkName] + ")")
     }
+}
+
+function isCloseToLine(obj, pos, range, bound) {
+    // Calculate the end point of the line segment
+    const endX = obj.x + range;
+    const endY = obj.y + (range * obj.slope);
+  
+    // Calculate the distance from the line segment to the point
+    const distance = distanceFromPointToLine(pos.x, pos.y, obj.x, obj.y, endX, endY);
+
+    // Check if the distance is less than the bounding box value
+    return distance < bound;
+}
+
+// Utility function to calculate the distance from a point to a line segment
+function distanceFromPointToLine(x, y, x1, y1, x2, y2) {
+    const a = x - x1;
+    const b = y - y1;
+    const c = x2 - x1;
+    const d = y2 - y1;
+
+    const dot = a * c + b * d;
+    const lenSq = c * c + d * d;
+    const param = (lenSq !== 0) ? dot / lenSq : 0;
+
+    let xx, yy;
+
+    if (param < 0) {
+        xx = x1;
+        yy = y1;
+    } else if (param > 1) {
+        xx = x2;
+        yy = y2;
+    } else {
+        xx = x1 + param * c;
+        yy = y1 + param * d;
+    }
+
+    const dx = x - xx;
+    const dy = y - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getBulletDamage() {
+    return Math.floor(Math.random() * (GAME_ARGS.BULLET_DAMAGE.MAX - GAME_ARGS.BULLET_DAMAGE.MIN + 1)) + GAME_ARGS.BULLET_DAMAGE.MIN
 }
 
 // ==============================
@@ -986,7 +1005,16 @@ function gameTick() {
 
             if (player == null) continue;
 
-            if (player.disconnected || player.health < 1) {
+            if (player.disconnected) {
+                delete games[keys[i]].players[players[p]]
+                players.splice(p, 1)
+                p--;
+                continue;
+            }
+
+            if (player.health < 1) {
+                io.to(players[p]).emit("error", "Game Over")
+
                 delete games[keys[i]].players[players[p]]
                 players.splice(p, 1)
                 p--;
@@ -1029,15 +1057,18 @@ function gameTick() {
                 const deltas = calculateDelta(player.position.x, player.position.y, 
                     player.position.x + player.mousePosition.x, player.position.y + player.mousePosition.y, GAME_ARGS.BULLET_SPEED)
 
+                const dx = deltas.dx + (Math.random() - 0.5) * GAME_ARGS.BULLET_RANDOMNESS
+                const dy = deltas.dy + (Math.random() - 0.5) * GAME_ARGS.BULLET_RANDOMNESS
+
                 games[keys[i]].bullets.push({
-                    x: player.position.x,
-                    y: player.position.y,
+                    x: player.position.x - dx,
+                    y: player.position.y - dy,
                     sx: player.position.x,
                     sy: player.position.y,
-                    dx: deltas.dx,
-                    dy: deltas.dy,
+                    dx: dx,
+                    dy: dy,
                     owner: players[p],
-                    damage: GAME_ARGS.BULLET_DAMAGE() * (Object.keys(game.players[players[p]].buffs).includes("attack")? GAME_ARGS.BUFFS.ATTACK : 1),
+                    damage: getBulletDamage() * (Object.keys(game.players[players[p]].buffs).includes("attack")? GAME_ARGS.BUFFS.ATTACK : 1),
                     lifetime: 0
                 })
 
@@ -1048,31 +1079,46 @@ function gameTick() {
         }
 
         for (let b = 0; b < game.bullets.length; b++) {
-            const bullet = game.bullets[b]
-
+            const bullet = game.bullets[b];
+        
             if (Math.sqrt(Math.pow(bullet.sx - bullet.x) + Math.pow(bullet.sy - bullet.y)) > GAME_ARGS.BULLET_RANGE || bullet.lifetime > GAME_ARGS.BULLET_LIFETIME) {
-                games[keys[i]].bullets.splice(b, 1)
+                games[keys[i]].bullets.splice(b, 1);
                 b--;
                 continue;
             }
-
-            bullet.x += bullet.dx
-            bullet.y += bullet.dy
-
-            bullet.lifetime++
-
+        
             for (let p = 0; p < players.length; p++) {
                 const player = game.players[players[p]];
+        
+                if (bullet.owner != players[p]) {
+                    // Calculate the slope of the line segment
+                    let slope = bullet.dy / bullet.dx
 
-                if (Math.abs(player.position.x - bullet.x) < GAME_ARGS.PLAYER_HITBOX && Math.abs(player.position.y - bullet.y) < GAME_ARGS.PLAYER_HITBOX && bullet.owner != players[p]) {
-                    player.health -= bullet.damage
+                    let bulletPosition = {
+                        x: bullet.x,
+                        y: bullet.y,
+                        slope: slope
+                    }
 
-                    games[keys[i]].bullets.splice(b, 1)
-                    b--;
+                    let playerPosition = {
+                        x: player.position.x,
+                        y: player.position.y,
+                    }
 
-                    break;
+                    if (isCloseToLine(bulletPosition, playerPosition, GAME_ARGS.BULLET_SPEED, GAME_ARGS.PLAYER_HITBOX)) {
+                        player.health -= bullet.damage;
+                        games[keys[i]].bullets.splice(b, 1);
+                        b--;
+                        break;
+                    }
+
                 }
             }
+        
+            bullet.x += bullet.dx;
+            bullet.y += bullet.dy;
+    
+            bullet.lifetime++;
         }
 
         for (let w = 0; w < game.powerups.length; w++) {
@@ -1091,6 +1137,10 @@ function gameTick() {
                     }
 
                     player.buffs[powerup.buff] = 0
+
+                    if (player.health < 0) {
+                        player.health = 0
+                    }
 
                     games[keys[i]].powerups.splice(w, 1)
                     w--;
@@ -1196,9 +1246,12 @@ if (DEBUG) {
                 games = {};
                 console.log("Shutdown process completed.")
                 process.exit()
+            case "reload":
+                GAME_ARGS = JSON.parse(fs.readFileSync("src/settings.json", "utf8"))
+                console.log("Reloaded settings.json")
                 break;
             default:
-                console.error("Not a valid command. Commands: [stop]")
+                console.error("Not a valid command. Commands: [echo, reload, stop]")
         }
     })
 }
