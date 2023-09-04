@@ -108,3 +108,6 @@ data
 
 # Obfuscator Cache
 src/public/javascript/cache
+
+# Settings
+src/settings.json
