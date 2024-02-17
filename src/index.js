@@ -483,7 +483,7 @@ app.get("*.js", (req, res) => {
     }
 
     if (fs.existsSync("src/public/javascript/" + (DEBUG? "":"cache/") + req.path.substring(1))) {
-        res.header("Content-Type", "application/javascript").send(fs.readFileSync("src/public/javascript/" + (DEBUG? "":"cache/") + req.path.substring(1)).toString())
+        res.header("Content-Type", "application/javascript").send(fs.readFileSync(p).toString())
     } else {
         res.status(404).send("404 | Resource Not Found")
     }
