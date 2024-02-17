@@ -474,15 +474,15 @@ app.get("/game", (req, res) => {
 })
 
 app.get("*.js", (req, res) => {
-    const p = path.join(__dirname, "src/public/javascript", (DEBUG? "":"cache/") + req.path.substring(1)).normalize()
+    const p = path.join(__dirname, "/public/javascript", (DEBUG? "":"cache/") + req.path.substring(1)).normalize()
 
     // check if its still within the javascript directory
-    if (!p.startsWith(path.join(__dirname, "src/public/javascript", (DEBUG? "":"cache/")).normalize())) {
+    if (!p.startsWith(path.join(__dirname, "/public/javascript", (DEBUG? "":"cache/")).normalize())) {
         res.status(403).send("Forbidden")
         return;
     }
 
-    if (fs.existsSync("src/public/javascript/" + (DEBUG? "":"cache/") + req.path.substring(1))) {
+    if (fs.existsSync(p)) {
         res.header("Content-Type", "application/javascript").send(fs.readFileSync(p).toString())
     } else {
         res.status(404).send("404 | Resource Not Found")
