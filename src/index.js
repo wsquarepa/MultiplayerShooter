@@ -1,6 +1,7 @@
 const express = require('express')
 const dotenv = require('dotenv')
 const fs = require('fs')
+const path = require('path')
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
 const bcrypt = require('bcrypt')
@@ -473,8 +474,16 @@ app.get("/game", (req, res) => {
 })
 
 app.get("*.js", (req, res) => {
+    const p = path.join(__dirname, "src/public/javascript", (DEBUG? "":"cache/") + req.path.substring(1)).normalize()
+
+    // check if its still within the javascript directory
+    if (!p.startsWith(path.join(__dirname, "src/public/javascript", (DEBUG? "":"cache/")).normalize())) {
+        res.status(403).send("Forbidden")
+        return;
+    }
+
     if (fs.existsSync("src/public/javascript/" + (DEBUG? "":"cache/") + req.path.substring(1))) {
-        res.send(fs.readFileSync("src/public/javascript/" + (DEBUG? "":"cache/") + req.path.substring(1)).toString())
+        res.header("Content-Type", "application/javascript").send(fs.readFileSync("src/public/javascript/" + (DEBUG? "":"cache/") + req.path.substring(1)).toString())
     } else {
         res.status(404).send("404 | Resource Not Found")
     }
