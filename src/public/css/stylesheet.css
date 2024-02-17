@@ -6,6 +6,7 @@ body {
     background-color: #252A2E;
     color: #E0E3E7;
     font-family: 'Comfortaa';
+    line-height: 28px;
 }
 
 .middle {
@@ -31,14 +32,28 @@ a:hover {
 }
 
 input {
-    cursor: pointer;
+    cursor: text;
     border-style: none;
+    margin-left: 4px;
+    margin-right: 4px;
+    background-color: #1e2124;
+    border-radius: 4px;
+    padding: 8px;
+    color: #E0E3E7;
+    font-weight: 500;
+    font-family: 'Comfortaa';
+    outline: none;
 }
 
 button {
     color: black;
     background-color: lightblue;
     border-style: none;
+    padding: 4px;
+    margin-left: 4px;
+    margin-right: 4px;
+    border-radius: 4px;
+    font-family: 'Comfortaa';
 }
 
 button:hover {
